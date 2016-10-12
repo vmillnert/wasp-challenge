@@ -8,7 +8,7 @@
 Publish a message once to make it takeoff
 
 ```
-$ rostopic pub --once /bebop/takeoff std_msgs/Emptu
+$ rostopic pub --once /bebop/takeoff std_msgs/Empty
 ```
 Echo a message once to make it takeoff
 
