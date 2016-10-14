@@ -4,7 +4,7 @@
 <include file="$(find turtlebot_bringup)/launch/minimal.launch">
 </include>
 
-<include file="$(find rplidar_ros)/launch/rplidar.launch">
+<include file="$(find wasp_g1_start)/launch/rplidar.launch">
 </include>
 
 </launch>
