@@ -4,3 +4,6 @@
 [submodule "rplidar_ros"]
 	path = rplidar_ros
 	url = https://github.com/robopeak/rplidar_ros.git
+[submodule "multiple_bebops"]
+	path = multiple_bebops
+	url = https://github.com/tnaegeli/multiple_bebops.git

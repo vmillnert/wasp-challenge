@@ -15,3 +15,13 @@ Echo a message once to make it takeoff
 ```
 $ rostopic echo /bebop/takeoff 
 ```
+
+
+# Connect to the Bebop with a custom IP
+
+With the steps followd i "multiple_bebops" one has to go into the bebop-driver and change the launce-file.
+
+i.e.
+
+in /bebop_autonomy/bebop_driver/launch/bebop_nodelet.launch
+specify the new ip-adress. For the red bebop this is "10.42.0.102".
