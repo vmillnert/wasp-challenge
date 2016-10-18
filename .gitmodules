@@ -7,3 +7,7 @@
 [submodule "multiple_bebops"]
 	path = multiple_bebops
 	url = https://github.com/tnaegeli/multiple_bebops.git
+[submodule "actionlib"]
+	path = actionlib
+	url = https://github.com/ros/actionlib.git
+	branch = indigo-devel

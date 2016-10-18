@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <package>
   <name>rmote</name>
-  <version>0.0.0</version>
-  <description>The rmote package</description>
+  <version>0.0.1</version>
+  <description>Package for remote execution of roslaunch configurations</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="group3@todo.todo">group3</maintainer>
+  <maintainer email="per.skarin@control.lth.se">Per Skarin</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
