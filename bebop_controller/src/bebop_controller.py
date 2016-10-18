@@ -15,6 +15,7 @@ from std_msgs.msg import String
 
 class Controller(object):
     _pos = Point()
+    _goal_pos = Point()
 
     _takeoff_pub = rospy.Publisher('/bebop/takeoff', Empty, queue_size=10)
     _land_pub = rospy.Publisher('/bebop/land', Empty, queue_size=10)
@@ -31,6 +32,9 @@ class Controller(object):
         rospy.Subscriber('/bebop_teleop/cmd_vel', Twist, self.teleop_velocity_callback)
         # Add capabilities for an action server here
         # start the action server
+        # Set initial goal position
+        _goal_pos.x = 1.0
+        _goal_pos.y = 0.0
 
         
     def teleop_command_callback(self, msg):
@@ -54,7 +58,7 @@ class Controller(object):
         loop_rate = rospy.Rate(20)
         while not rospy.is_shutdown():
            rospy.loginfo('%s: Current pos:\n x: %d\n y: %d\n z: %d',  self._name,  self._pos.x, self._pos.y, self._pos.z) 
-           rospy.loginfo('%s: Goal pos:
+           rospy.loginfo('%s: Goal pos:\n x: %d\n y: %d\n z: %d', self._name, self._goal_pos.x, self._goal_pos.y, self._goal_pos.y)
             # Publish the velocity command sent by the bebop_teleop
             self._cmd_vel_pub.publish(self._teleop_vel)
             
