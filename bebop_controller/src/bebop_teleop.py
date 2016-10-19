@@ -21,6 +21,8 @@ q/w : increase/decrease max speeds by 10%
 e/r : increase/decrease only linear speed by 10%
 s/d : increase/decrease only angular speed by 10%
 
+x: MANUAL CONTROL (i.e. stop auto controller)
+c: AUTOMATIC CONTROL
 a: takeoff
 z: Land
 CTRL-C to quit
@@ -101,6 +103,12 @@ if __name__=="__main__":
                             command = True
                         elif key == 'z':
                             command_msg = "land"
+                            command = True
+                        elif key == 'x':
+                            command_msg = "manual"
+                            command = True
+                        elif key == 'c':
+                            command_msg = "auto"
                             command = True
 			else:
 				x = 0
