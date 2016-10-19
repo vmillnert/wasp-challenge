@@ -2,13 +2,12 @@
 
 import rospy
 import tf
-from world import TagRef
-
-from std_msgs.msg import String # TODO: Replace with tag position
+from world.msg import TagRef
 
 broadcaster = tf.TransformBroadcaster()
 
-def locatedCallback(data):
+def locatedCallback(tagref):
+  print(tagref)
   print("TODO: Implement the locatedCallback")
   sendTransform(0, 0, 0, 0)
 
@@ -22,7 +21,7 @@ def sendTransform(dx, dy, dz, theta):
 
 def listener():
   rospy.init_node('tagrefListener', anonymous=False)
-  rospy.Subscriber('tagref', String, locatedCallback) # TODO: Name and type of topic
+  rospy.Subscriber('tagref', TagRef, locatedCallback) # TODO: Name and type of topic
   rospy.spin()
 
 if __name__ == "__main__":
