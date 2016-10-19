@@ -33,8 +33,8 @@ class Controller(object):
         # Add capabilities for an action server here
         # start the action server
         # Set initial goal position
-        _goal_pos.x = 1.0
-        _goal_pos.y = 0.0
+        self._goal_pos.x = 1.0
+        self._goal_pos.y = 0.0
 
         
     def teleop_command_callback(self, msg):
@@ -57,12 +57,12 @@ class Controller(object):
     def run_controller(self):
         loop_rate = rospy.Rate(20)
         while not rospy.is_shutdown():
-           rospy.loginfo('%s: Current pos:\n x: %d\n y: %d\n z: %d',  self._name,  self._pos.x, self._pos.y, self._pos.z) 
-           rospy.loginfo('%s: Goal pos:\n x: %d\n y: %d\n z: %d', self._name, self._goal_pos.x, self._goal_pos.y, self._goal_pos.y)
-            # Publish the velocity command sent by the bebop_teleop
-            self._cmd_vel_pub.publish(self._teleop_vel)
+           # rospy.loginfo('%s: Current pos:\n x: %d\n y: %d\n z: %d',  self._name,  self._pos.x, self._pos.y, self._pos.z) 
+           # rospy.loginfo('%s: Goal pos:\n x: %d\n y: %d\n z: %d', self._name, self._goal_pos.x, self._goal_pos.y, self._goal_pos.y)
+           # Publish the velocity command sent by the bebop_teleop
+           self._cmd_vel_pub.publish(self._teleop_vel)
             
-            loop_rate.sleep()
+           loop_rate.sleep()
         
     def takeoff(self):
         rospy.loginfo('%s: Drone is taking off \n' % self._name)
