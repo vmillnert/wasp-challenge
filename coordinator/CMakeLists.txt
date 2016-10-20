@@ -7,6 +7,7 @@ project(coordinator)
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   actionlib_msgs
+  genmsg
   roscpp
   rospy
   std_msgs
@@ -62,6 +63,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## Generate actions in the 'action' folder
 add_action_files(
+   DIRECTORY
+   action
    FILES
    Move.action
 #   Action2.action
