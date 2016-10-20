@@ -21,7 +21,9 @@ class Coordinator:
     def __init__(self, wp_file):
         self.waypoints = self.read_waypoints(wp_file)
 
-        rospy.init_node('coordinator', anonymous=True)
+        rospy.logdebug('coordinator:__init__: Using waypoints from %s', wp_file)
+
+        rospy.init_node('coordinator', anonymous=True, log_level=rospy.DEBUG)
 
         # Interface to ROSplan
         rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
@@ -45,12 +47,13 @@ class Coordinator:
 
     def action_dispatch_callback(self, msg):
         # Check Action type and call correct functions.
-        print "In dispatch feedback"
+        rospy.logdebug('coordinator:action_dispatch_callback:%s', msg.name)
+
         if (msg.name == 'goto'):
                 self.action_goto(msg.parameters)
 
     def action_goto(self, parameters):
-        print "in goto"
+    	rospy.logdebug('coordinator:action_goto')
         obj = None
         wp = None
         for p in parameters:
@@ -83,19 +86,23 @@ class Coordinator:
         ac.send_goal(goal)
         ac.wait_for_result()
 
+        feedback_msg = ActionFeedback()
+        feedback_msg.action_id = -1
         if (ac.get_state() == SimpleGoalState.DONE):
-            print "Success!"
+        	feedback_msg.status = "DONE"
         else:
-            print "Goal failed"
+        	feedback_msg.status = "FAILED"
+
+        self.feedback_pub(feedback_msg)
 
     def test_actions(self):
         dispatch_msg = ActionDispatch()
         dispatch_msg.name = "goto"
         dispatch_msg.parameters = [KeyValue('obj','drone'), KeyValue('wp','wp1')]
-        tmp_pub = rospy.Publisher("/kcl_rosplan/action_dispatch", ActionDispatch, queue_size=10)
+        tmp_pub = rospy.Publisher("/kcl_rosplan/action_dispatch", ActionDispatch, queue_size=1)
         rospy.sleep(0.1)
         tmp_pub.publish(dispatch_msg)
-        print "Publishing"
+        rospy.logdebug('coordinator:test_actions')
             
     def spin(self):
         rospy.spin()
