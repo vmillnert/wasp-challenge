@@ -3,6 +3,8 @@ import rospy
 import csv
 from std_msgs.msg import String
 from rosplan_dispatch_msgs import ActionDispatch,ActionFeedback
+from actionlib.client import SimpleActionClient
+from coordinator.action import Move
 import sys
 
 class Coordinator:
@@ -17,8 +19,11 @@ class Coordinator:
         rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback)
 
         #Interface to Turtlebot
+        ns_turtle = "/turtlebot"
+        turtle_ac = SimpleActionClient(ns_turtle, Move)
 
         #Interface to Drone
+        ns_drone = "/beebop"
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
