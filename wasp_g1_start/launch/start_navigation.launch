@@ -1,0 +1,12 @@
+<launch>
+
+<include file="$(find wasp_g1_start)/launch/start_tutlebot_base_lidar.launch">
+</include>
+
+<include file="$(find wasp_g1_start)/launch/tranform.launch">
+</include>
+
+<include file="$(find wasp_g1_start)/launch/testmapserver.launch">
+</include>
+
+</launch>
