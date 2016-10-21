@@ -148,8 +148,8 @@ class Controller(object):
         # Current position is stored in 'odom'-frame
         control = PointStamped()
         control = deepcopy(self._my_point)
-        control.point.x += vx
-        control.point.y += vy
+        control.point.x += deepcopy(vx)
+        control.point.y += deepcopy(vy)
         try:
             control = self._listener.transformPoint('base_link',
                                                     control)
