@@ -6,7 +6,8 @@ import csv
 from std_msgs.msg import String
 from diagnostic_msgs.msg import KeyValue
 from rosplan_dispatch_msgs.msg import ActionDispatch,ActionFeedback
-from actionlib import SimpleActionClient, SimpleGoalState
+from actionlib import SimpleActionClient
+from actionlib_msgs.msg import GoalStatus
 from coordinator.msg import MoveAction
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import sys
@@ -52,8 +53,10 @@ class Coordinator:
         if (msg.name == 'goto'):
                 self.action_goto(msg.parameters)
 
-    def action_goto(self, parameters):
+    def action_goto(self, msg):
     	rospy.logdebug('coordinator:action_goto')
+        parameters = msg.parameters
+        action_id = msg.action_id
         obj = None
         wp = None
         for p in parameters:
@@ -83,15 +86,19 @@ class Coordinator:
         if ac == None:
             raise CoordinatorError("No action client exist for obj %s" % obj)
 
+        # Notify action dispatcher of status
+        feedback_msg = ActionFeedback(action_id = action_id, status = "action_enabled")
+        self.feedback_pub(feedback_msg)        
+
         ac.send_goal(goal)
         ac.wait_for_result()
 
         feedback_msg = ActionFeedback()
-        feedback_msg.action_id = -1
-        if (ac.get_state() == SimpleGoalState.DONE):
-        	feedback_msg.status = "DONE"
+        feedback_msg.action_id = action_id
+        if (ac.get_state() == GoalStatus.SUCCEEDED):
+        	feedback_msg.status = "action_achieved"
         else:
-        	feedback_msg.status = "FAILED"
+        	feedback_msg.status = "action_failed"
 
         self.feedback_pub(feedback_msg)
 
