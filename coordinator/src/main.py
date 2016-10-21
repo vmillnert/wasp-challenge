@@ -32,8 +32,8 @@ class Coordinator:
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
 
         #Interface to Turtlebot
-        ns_turtle = "turtlebot"
-        self.turtle_move_ac = SimpleActionClient(ns_turtle, MoveBaseAction)
+        # ns_turtle = "TurtleMoveBaseAction"
+        self.turtle_move_ac = SimpleActionClient("TurtleMoveBaseAction", MoveBaseAction)
 
         ns_drone = "beebop"
         self.beebop_move_ac = SimpleActionClient(ns_drone, MoveBaseAction)
@@ -42,7 +42,7 @@ class Coordinator:
         waypoints = None
         with open(filename, 'r') as csvfile:
             r = csv.reader(csvfile)
-            waypoints = {w[0] : (w[1],w[2]) for w in r}
+            waypoints = {w[0] : (float(w[1]),float(w[2])) for w in r}
         
         return waypoints
 
@@ -51,7 +51,7 @@ class Coordinator:
         rospy.logdebug('coordinator:action_dispatch_callback:%s', msg.name)
 
         if (msg.name == 'goto'):
-                self.action_goto(msg.parameters)
+                self.action_goto(msg)
 
     def action_goto(self, msg):
     	rospy.logdebug('coordinator:action_goto')
@@ -86,9 +86,12 @@ class Coordinator:
         if ac == None:
             raise CoordinatorError("No action client exist for obj %s" % obj)
 
+        if not ac.wait_for_server(timeout=rospy.Duration(5)):
+            rospy.logdebug("HANDLE NO SERVER!")
+
         # Notify action dispatcher of status
         feedback_msg = ActionFeedback(action_id = action_id, status = "action_enabled")
-        self.feedback_pub(feedback_msg)        
+        self.feedback_pub.publish(feedback_msg)        
 
         ac.send_goal(goal)
         ac.wait_for_result()
@@ -100,12 +103,12 @@ class Coordinator:
         else:
         	feedback_msg.status = "action_failed"
 
-        self.feedback_pub(feedback_msg)
+        self.feedback_pub.publish(feedback_msg)
 
     def test_actions(self):
         dispatch_msg = ActionDispatch()
         dispatch_msg.name = "goto"
-        dispatch_msg.parameters = [KeyValue('obj','drone'), KeyValue('wp','wp1')]
+        dispatch_msg.parameters = [KeyValue('obj','turtle'), KeyValue('wp','wp1')]
         tmp_pub = rospy.Publisher("/kcl_rosplan/action_dispatch", ActionDispatch, queue_size=1)
         rospy.sleep(0.1)
         tmp_pub.publish(dispatch_msg)
