@@ -6,7 +6,7 @@ import csv
 from std_msgs.msg import String
 from diagnostic_msgs.msg import KeyValue
 from rosplan_dispatch_msgs.msg import ActionDispatch,ActionFeedback
-from main import Action
+from main import ActionName
 import sys
 
 class ActionStatus:
@@ -80,7 +80,7 @@ class ActionFeeder:
             self.current_msg.action_id = i
             self.current_msg.name = action[0]
             self.current_msg.parameters = [KeyValue('obj',action[1])]
-            if action[0] == Action.goto:
+            if action[0] == ActionName.goto:
                 self.current_msg.parameters.append(KeyValue('wp',action[2]))
             self.dispatch()
 

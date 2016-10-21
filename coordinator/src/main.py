@@ -12,7 +12,7 @@ from coordinator.msg import MoveAction
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import sys
 
-class Action:
+class ActionName:
     goto = "goto"
     land = "land"
     takeoff = "takeoff"
