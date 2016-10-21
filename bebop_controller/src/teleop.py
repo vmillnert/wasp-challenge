@@ -43,7 +43,7 @@ z: land
 x: MANUAL MODE  
 c: AUTOMATIC MODE  
 SPACE: PANIC BUTTON (Go to manual mode and STOP)  
-q: quit
+q: quit  
 """
 
 
@@ -86,6 +86,7 @@ if __name__ == '__main__':
     # Start the publisher
     pub = rospy.Publisher('/bebop_teleop/cmd_vel', Twist, queue_size=1)
     command_pub = rospy.Publisher('/bebop_teleop/command', String, queue_size=10)
+    
     rospy.init_node('teleop_twist_keyboard')
     
     pygame.init()
@@ -145,9 +146,14 @@ if __name__ == '__main__':
                         y += moveBindings[key][1]
                         z += moveBindings[key][2]
                         th += moveBindings[key][3]
+                        command = True
+                        command_msg = 'manual'
                     elif key in speedBindings.keys():
                         speed = speed*speedBindings[key][0]
                         turn = turn*speedBindings[key][1]
+                        command = True
+                        command_msg = 'manual'
+
                     elif key == 'q':
                         twist = Twist()
                         twist.linear.x = 0; twist.linear.y = 0; twist.linear.z = 0
@@ -156,13 +162,12 @@ if __name__ == '__main__':
                         shouldRun = False
 
                         break
-                    elif key == 'x':
-                        rospy.loginfo('Enter manual mode')
-                    elif key == 'c':
-                        rospy.loginfo('Enter auto mode')
+
                     elif key == 'space':
                         panic = True
                         rospy.loginfo('PANIC!!!!')
+                        command = True
+                        command_msg = 'manual'
                     elif key == 'a':
                         command_msg = "takeoff"
                         command = True
@@ -192,7 +197,7 @@ if __name__ == '__main__':
 
 
                 if command:
-                    comman_pub.publish(command_msg)
+                    command_pub.publish(command_msg)
                     command = False
                     print command_msg
 
@@ -208,7 +213,7 @@ if __name__ == '__main__':
                     pub.publish(twist)
 
     except Exception as e:
-        rospy.logingoprint(e)
+        rospy.loginfo(e)
 
     finally:
         twist = Twist()

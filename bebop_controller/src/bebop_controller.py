@@ -31,9 +31,9 @@ class Controller(object):
         self._my_point = PointStamped() # current PointStamped ('odom'-frame)
         self._teleop_vel = Twist() # control-signal sent by the
                               # teleoperation keyboard
-        self._teleop_time = 10 # counter for how many samples the
-                               # teleop_command should be valid
-        self._teleop_counter = 0 
+        # self._teleop_time = 10 # counter for how many samples the
+        #                        # teleop_command should be valid
+        # self._teleop_counter = 0 
 
         # Control mode for the drone
         # 'manual' - from teleoperation
@@ -107,7 +107,7 @@ class Controller(object):
         goal_point = PointStamped()
         goal_point.header.stamp = rospy.Time.now()
         goal_point.header.frame_id = 'odom'
-        goal_point.point.x = 0.5
+        goal_point.point.x = 0.0
         goal_point.point.y = 0.0
         self.set_goal(goal_point)
 
@@ -211,7 +211,7 @@ class Controller(object):
 
     # Reads velocity commands sent from the teleoperation-keyboard
     def teleop_velocity_callback(self, msg):
-        rospy.loginfo('%s: Teleop velocity: %s', self._name, msg)
+        # rospy.loginfo('%s: Teleop velocity: %s', self._name, msg)
         self._teleop_vel = msg
         self._teleop_counter = 0
 
@@ -300,16 +300,17 @@ class Controller(object):
                 ######################################
 
                 # inform the user of control-velocities about to be sent
-                rospy.loginfo('%s: Velocity command sent: \n vx: %.2f \n vy: %.2f',
+                rospy.loginfo('%s: Velocity command sent: \n vx: %.2f \n vy: %.2f \n th: %.2f',
                               self._name,
                               cmd_vel.linear.x,
-                              cmd_vel.linear.y)
+                              cmd_vel.linear.y,
+                              cmd_vel.angular.z)
 
-                self._teleop_counter = self._teleop_counter + 1 
-                if self._teleop_counter >= self._teleop_time:
-                    # set the command to 0
-                    self._teleop_vel = Twist()
-                    self._teleop_counter = 0
+                # self._teleop_counter = self._teleop_counter + 1 
+                # if self._teleop_counter >= self._teleop_time:
+                #     # set the command to 0
+                #     self._teleop_vel = Twist()
+                #     self._teleop_counter = 0
                     
                 
             elif self._control_mode == 'auto':
@@ -333,9 +334,6 @@ class Controller(object):
                     ux = self.limit(vx)
                     uy = self.limit(vy)
 
-                    # convert the error form 'odom'-frame to 'base_link'-frame
-                    ex, ey = self.convert_control_signal(xref-x, yref-y)
-                    
                     
                     # convert the control signal from 'odom'-frame to
                     # 'base_link'-frame
