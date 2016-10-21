@@ -15,23 +15,19 @@ from geometry_msgs.msg import Twist
 
 # Display some text
 msg = """
-Reading from the keyboard  and Publishing to Twist! 
+Reading from the keyboard and publishing to Bebop! 
 ---------------------------
 Moving around: 
-   u     i    o 
-   j      k    l 
-   m    ,    . 
 
-For Holonomic mode (strafing), hold down the shift key: 
----------------------------
-   U     I    O 
-   J     K    L 
-   M    <     > 
+Use the arrows:
 
-t : up (+z) 
-b : down (-z) 
+Up-arrow:     Forward  
+Left-arrow:    Rotate left  
+Right-arrow:  Rotate right  
+Down-arrow:  Backward  
 
-anything else : stop 
+, : up (+z) 
+. : down (-z) 
 
 w/s : increase/decrease max speeds by 10% 
 e/d : increase/decrease only linear speed by 10% 
@@ -48,24 +44,12 @@ q: quit
 
 
 moveBindings = {
-		'i':(1,0,0,0),
-		'o':(1,0,0,-1),
-		'j':(0,0,0,1),
-		'l':(0,0,0,-1),
-		'u':(1,0,0,1),
-		',':(-1,0,0,0),
-		'.':(-1,0,0,1),
-		'm':(-1,0,0,-1),
-		'O':(1,-1,0,0),
-		'I':(1,0,0,0),
-		'J':(0,1,0,0),
-		'L':(0,-1,0,0),
-		'U':(1,1,0,0),
-		'<':(-1,0,0,0),
-		'>':(-1,-1,0,0),
-		'M':(-1,1,0,0),
-		't':(0,0,1,0),
-		'b':(0,0,-1,0),
+		'up':(1,0,0,0),
+		'left':(0,0,0,1),
+		'right':(0,0,0,-1),
+		'down':(-1,0,0,0),
+		',':(0,0,1,0),
+		'.':(0,0,-1,0),
 	       }
 
 speedBindings={
@@ -205,6 +189,10 @@ if __name__ == '__main__':
                     twist = Twist()
                     twist.linear.x = x*speed; twist.linear.y = y*speed; twist.linear.z = z*speed;
                     twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th*turn
+                    rospy.loginfo('Velocity: \n linear: x: %.2f\n z: %.2f \n angular: \n z: %.2f',
+                                  twist.linear.x,
+                                  twist.linear.z,
+                                  twist.angular.z)
                     pub.publish(twist)
                 elif panic:
                     twist = Twist()
