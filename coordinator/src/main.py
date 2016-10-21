@@ -12,6 +12,14 @@ from coordinator.msg import MoveAction
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import sys
 
+class Action:
+    goto = "goto"
+    land = "land"
+    takeoff = "takeoff"
+    follow = "follow"
+    load = "load"
+    unload = "unload"
+
 class CoordinatorError(Exception):
      def __init__(self, value):
          self.value = value
