@@ -7,6 +7,8 @@ from copy import deepcopy
 import numpy
 import tf
 
+from PID import *
+from PIDParameters import *
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovariance
@@ -19,10 +21,10 @@ from std_msgs.msg import String
 
 class Controller(object):
 
-    _MAX_VEL = 0.1 # Maximum velocity for the drone in any one
+    _MAX_VEL = 0.3 # Maximum velocity for the drone in any one
                    # direction
                    
-    _TOLERANCE = 0.1 # Tolerance for the Go-to-goal controller
+    _TOLERANCE = 0.2 # Tolerance for the Go-to-goal controller
     
     def __init__(self, name):
         self._name = name
@@ -31,10 +33,8 @@ class Controller(object):
         self._my_point = PointStamped() # current PointStamped ('odom'-frame)
         self._teleop_vel = Twist() # control-signal sent by the
                               # teleoperation keyboard
-        # self._teleop_time = 10 # counter for how many samples the
-        #                        # teleop_command should be valid
-        # self._teleop_counter = 0 
 
+                              
         # Control mode for the drone
         # 'manual' - from teleoperation
         # 'auto'   - go-to-goal behaviour using the PID-controller
@@ -72,31 +72,9 @@ class Controller(object):
 
         
         #################
-        # PID parameters 
-        self._Beta = 1.0
-        self._H = 0.05
-        self._integratorOn = False
-        self._K = 0.1
-        self._N = 10
-        self._Td = 0.05
-        self._Ti = 10.0 # (10.0 means no I-part)
-        self._Tr = 10.0
-
-        self._Ix = 0.0 # x-direction ('odom'-frame)
-        self._Iy = 0.0 # y-direction ('odom'-frame)
-        self._Dx = 0.0 # x-direction ('odom'-frame)
-        self._Dy = 0.0 # x-direction ('odom'-frame)
-        self._vx = 0.0 # control signal ('odom'-frame)
-        self._vy = 0.0 # control signal ('odom'-frame)
-        self._ex = 0.0 # error  ('odom'-frame)
-        self._ey = 0.0 # error  ('odom'-frame)
-        self._x = 0.0 # current position in x-direction ('odom'-frame)
-        self._y = 0.0 # current position in y-direction ('odom'-frame)
-        self._xold = 0.0 # past position ('odom'-frame)
-        self._yold = 0.0 # past position ('odom'-frame)
-
-        self._ad = self._Td / (self._Td + self._N*self._H)
-        self._bd = self._K * self._ad * self._N
+        # # PID Controllers
+        self.xPID = PID() # pid-controller for x-direction
+        self.yPID = PID() # pid-controller for y-direction
 
         # Note: when actually sending the command signal it has to be
         # transformed into 'base_link'-frame before beingn sent
@@ -136,68 +114,6 @@ class Controller(object):
         self._goal_point = goal
 
 
-    # Calculates the control signal vx and vy
-    # Called from the controller-thread
-    def calculate_output(self, x, xref, y, yref):
-        self._y = y
-        self._x = x
-        self._xref = xref
-        self._yref = yref
-        self._ex = xref - x
-        self._ey = yref - y
-        self._Dx = self._ad*self._Dx - self._bd * (self._x - self._xold)
-        self._Dy = self._ad*self._Dy - self._bd * (self._y - self._yold)
-        self._vx = self._K*(self._Beta*xref - self._x) + self._Ix + self._Dx
-        self._vy = self._K*(self._Beta*yref - self._y) + self._Iy + self._Dy
-        return self._vx, self._vy
-
-
-    # Updates the controller state
-    # should use tracking-based anti-windup
-    # called from the controller-thread
-    def update_state(self, ux, uy):
-        if self._integratorOn:
-            self._Ix = self._Ix + (self._K*self._H/self._Ti)*self._ex + (self._H/self._Tr)*(self._ux - self._vx)
-            self._Iy = self._Iy + (self._K*self._H/self._Ti)*self._ey + (self._H/self._Tr)*(self._uy - self._vy)
-        else:
-            self._Ix = 0.0
-            self._Iy = 0.0
-
-        self._xold = self._x
-        self._yold = self._y
-        
-    # Sets th PIDParameters
-    # Should be called from the parameter-listener (or parameter service)
-    def set_parameters(self, Beta, H, integratorOn, K, N, Td, Ti, Tr):
-        self._Beta = Beta
-        self._H = H
-        self._integratorOn = integratorOn
-        self._K = K
-        self._N = N
-        self._Td = Td
-        self._Ti = Ti
-        self._Tr = Tr
-
-        self._ad = self._Td / (self._Td + self._N*self._H)
-        self._bd = self._K * self._ad * self._N
-
-        if not self._integratorOn:
-            self._Ix = 0.0
-            self._Iy = 0.0
-
-
-
-    # Sets the I-part of the controller to 0
-    # For example when changing the controller mode
-    def reset(self):
-        self._Ix = 0.0
-        self._Iy = 0.0
-        self._Dx = 0.0
-        self._Dy = 0.0
-        self._xold = 0.0
-        self._yold = 0.0
-        self._teleop_time = 0
-
 
 
     # Limit the control signal v by _MAX_VEL 
@@ -234,11 +150,6 @@ class Controller(object):
         control = deepcopy(self._my_point)
         control.point.x += vx
         control.point.y += vy
-        # control.header = self._my_point.header
-        # control.point.x = vx
-        # control.point.y = vy
-        # control.point.z = 0.0
-        # convert it to 'base_link'-frame
         try:
             control = self._listener.transformPoint('base_link',
                                                     control)
@@ -254,12 +165,12 @@ class Controller(object):
         return control.point.x, control.point.y
 
 
-    # Controller node
-    def controller(self):
+    # Run controller
+    def run(self):
         
         # We should have a loop-period of self._H
         # which means we should have a loop-rate of 1/self._H
-        loop_rate = rospy.Rate(1/self._H)
+        loop_rate = rospy.Rate(1/self.xPID.p.H)
 
         
         while not rospy.is_shutdown():
@@ -328,8 +239,9 @@ class Controller(object):
 
                     # Compute the control-signal ('odom'-frame)
                     # also stores the control-signal in self._vx and self._vy
-                    vx, vy = self.calculate_output(x, xref, y, yref)
-
+                    vx = self.xPID.calculate_output(x, xref)
+                    vy = self.yPID.calculate_output(y, yref)
+                    
                     # limit the control-signals ('odom'-frame)
                     ux = self.limit(vx)
                     uy = self.limit(vy)
@@ -355,15 +267,18 @@ class Controller(object):
                                   cmd_vel.linear.y)
 
                     # update the state
-                    self.update_state(ux, uy)
+
+                    self.xPID.update_state(ux)
+                    self.yPID.update_state(uy)
 
                 else:
                     # We are within the tolerance for the goal!
                     rospy.loginfo('%s: We have arrived at the goal sir!',
                                   self._name)
                     
-                    # reset the parameters.
-                    self.reset()
+                    # reset the PID controllers
+                    self.xPID.reset()
+                    self.yPID.reset()
                     cmd_vel = Twist()
 
                     ######################################
@@ -390,18 +305,26 @@ class Controller(object):
         # input commands from the bebop_teleop
         if msg.data == "takeoff":
             self.takeoff()
-            self.reset() # reset the PID-controller
+            # reset the PID-controller
+            self.xPID.reset()
+            self.yPID.reset() 
         elif msg.data == "land":
             self.land()
-            self.reset() # reset the PID-controller
+            # reset the PID-controller
+            self.xPID.reset()
+            self.yPID.reset() 
         elif msg.data == "manual":
             rospy.loginfo('%s: Swicthed to manual mode' % self._name)
             self._control_mode = 'manual'
-            self.reset() # reset the PID-controller
+            # reset the PID-controller
+            self.xPID.reset()
+            self.yPID.reset() 
         elif msg.data == "auto":
             rospy.loginfo('%s: Swicthed to automatic mode' % self._name)
             self._control_mode = 'auto'
-            self.reset() # reset the PID-controller
+            # reset the PID-controller
+            self.xPID.reset()
+            self.yPID.reset() 
         else:
             rospy.loginfo('%s: Got unknown command: %s \n', self._name, msg.data)
 
@@ -434,6 +357,6 @@ if __name__ == '__main__':
         # create the controller object
         c = Controller(rospy.get_name())
         # start the controller
-        c.controller()
+        c.run()
     except rospy.ROSInterruptException:
         print "Program interrupted before completion"
