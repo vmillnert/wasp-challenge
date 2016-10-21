@@ -32,11 +32,10 @@ class Coordinator:
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
 
         #Interface to Turtlebot
-        # ns_turtle = "TurtleMoveBaseAction"
         self.turtle_move_ac = SimpleActionClient("TurtleMoveBaseAction", MoveBaseAction)
 
-        ns_drone = "beebop"
-        self.beebop_move_ac = SimpleActionClient(ns_drone, MoveBaseAction)
+        #Interface to Bebop
+        self.beebop_move_ac = SimpleActionClient("BebopMoveBaseAction", MoveBaseAction)
 
     def read_waypoints(self, filename):
         waypoints = None
