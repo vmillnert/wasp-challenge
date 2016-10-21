@@ -11,3 +11,9 @@
 	path = actionlib
 	url = https://github.com/ros/actionlib.git
 	branch = indigo-devel
+[submodule "occupancy_grid_utils"]
+	path = occupancy_grid_utils
+	url = https://github.com/clearpathrobotics/occupancy_grid_utils
+[submodule "rosplan"]
+	path = rosplan
+	url = https://github.com/KCL-Planning/rosplan
