@@ -1,0 +1,4 @@
+goto, turtle, wp0
+goto, turtle, wp1
+goto, turtle, wp2
+takeoff, drone
