@@ -28,13 +28,13 @@ class CoordinatorListener:
         rospy.spin()
 
     def action_dispatch_callback(self, msg):
-        rospy.loginfo("coordinator_listener:action_dispatch_callback\n\tReceived a ActionDispatch message.")
+        rospy.loginfo("/coordinator_test/action_dispatch_callback")
 
     def action_feedback_callback(self, msg):
-        rospy.loginfo("coordinator_listener:action_feedback_callback\n\tReceived a ActionFeedback message.")
+        rospy.loginfo("/coordinator_test/action_feedback_callback")
 
     def execute_cb_turtle(self, goal):
-        rospy.loginfo("coordinator_listener:execute_cb_turtle\n\tExecuting goal.")
+        rospy.loginfo("/coordinator_test/execute_cb_turtle")
         feedback_msg = MoveBaseFeedback()
         feedback_msg.base_position = PoseStamped()
         self.as_turtle.publish_feedback(feedback_msg)
