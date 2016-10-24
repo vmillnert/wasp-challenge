@@ -1,9 +1,0 @@
-# Define the goal
-geometry_msgs/Point goal_position
----
-# Define the result
-uint32 result
----
-# Feedback
-geometry_msgs/Point base_position
-uint32 current_state

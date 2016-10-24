@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -75,10 +76,12 @@ add_action_files(
 )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(
+ DEPENDENCIES
+ std_msgs
+ actionlib_msgs
+ geometry_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -113,7 +116,8 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES bebop_controller
 #  CATKIN_DEPENDS roscpp rospy std_msgs
-#  DEPENDS system_lib
+#  DEPENDS system_lib 
+   DEPENDS message_runtime actionlib_msgs
 )
 
 ###########
