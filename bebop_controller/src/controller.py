@@ -10,6 +10,8 @@ import tf
 from PID import *
 from PIDParameters import *
 
+from bebop_controller.msg import *
+
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovariance
 from geometry_msgs.msg import TwistWithCovariance
