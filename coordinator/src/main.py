@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 
-import rospy
-
+import sys
 import csv
+
+import rospy
+from actionlib import SimpleActionClient
+
+from actionlib_msgs.msg import GoalStatus
+from rosplan_dispatch_msgs.msg import ActionDispatch, ActionFeedback
 from std_msgs.msg import String
 from diagnostic_msgs.msg import KeyValue
-from rosplan_dispatch_msgs.msg import ActionDispatch,ActionFeedback
-from actionlib import SimpleActionClient
-from actionlib_msgs.msg import GoalStatus
-from bebop_controller.msg import BebopLandAction, BebopTakeOffAction, BebopLoadAction
-from bebop_controller.msg import BebopUnloadAction, BebopFollowAction, BebopMoveBaseAction
+from bebop_controller.msg import *
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-import sys
 
 
 class ActionName:
@@ -67,7 +67,6 @@ class Coordinator:
 
         #Interface to Turtlebot
         self.turtle_move_ac = SimpleActionClient("TurtleMoveBaseAction", MoveBaseAction)
-        rospy.sleep(0.1)
 
         #Interface to Bebop
         self.bebop_land_ac = SimpleActionClient("BebopLandAction", BebopLandAction)
@@ -76,7 +75,6 @@ class Coordinator:
         self.bebop_takeoff_ac = SimpleActionClient("BebopTakeOffAction", BebopTakeOffAction)
         self.bebop_unload_ac = SimpleActionClient("BebopUnloadAction", BebopUnloadAction)
         self.bebop_follow_ac = SimpleActionClient("BebopFollowAction", BebopFollowAction)
-        rospy.sleep(0.1)
 
 
     def read_waypoints(self, filename):
@@ -84,7 +82,7 @@ class Coordinator:
         with open(filename, 'r') as csvfile:
             r = csv.reader(csvfile)
             waypoints = {w[0] : (float(w[1]),float(w[2])) for w in r}
-        
+
         return waypoints
 
 
@@ -109,24 +107,81 @@ class Coordinator:
             rospy.loginfo("No action called %s for obj %s", msg.name, msg.obj)
 
 
+    def _action_feedback_from_state(self, state):
+        feedback_msg = ActionFeedback()
+        feedback_msg.action_id = action_id
+        if (ac.get_state() == GoalStatus.SUCCEEDED):
+        	feedback_msg.status = "action_achieved"
+        else:
+        	feedback_msg.status = "action_failed"
+
+        self.feedback_pub.publish(feedback_msg)
+
+
     def action_takeoff(self, action):
-        pass
+        rospy.loginfo('/coordinator/action_takeoff for %s', action.obj)
+
+        action_id = action.action_id
+        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+
+        ac = self.bebop_takeoff_ac
+
+        ac.send_goal(BebopTakeOffGoal())
+        ac.wait_for_result()
+
+        self._action_feedback_from_state(ac.get_state())
 
 
     def action_land(self, action):
-        pass
+        rospy.loginfo('/coordinator/action_land for %s', action.obj)
+
+        action_id = action.action_id
+        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+
+        ac = self.bebop_land_ac
+
+        ac.send_goal(BebopLandGoal())
+        ac.wait_for_result()
+
+        self._action_feedback_from_state(ac.get_state())
 
 
     def action_load(self, action):
-        pass
+        rospy.loginfo('/coordinator/action_load for %s', action.obj)
+
+        action_id = action.action_id
+        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+
+        ac = self.bebop_load_ac
+
+        ac.send_goal(BebopLoadGoal())
+        ac.wait_for_result()
+
+        self._action_feedback_from_state(ac.get_state())
 
 
     def action_unload(self, action):
-        pass
+        rospy.loginfo('/coordinator/action_unload for %s', action.obj)
+
+        action_id = action.action_id
+        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+
+        ac = self.bebop_unload_ac
+
+        ac.send_goal(BebopUnloadGoal())
+        ac.wait_for_result()
 
 
     def action_follow(self, action):
-        pass
+        rospy.loginfo('/coordinator/action_follow for %s', action.obj)
+
+        action_id = action.action_id
+        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+
+        ac = self.bebop_follow_ac
+
+        ac.send_goal(BebopFollowGoal())
+        ac.wait_for_result()
 
 
     def action_goto(self, action):
@@ -136,39 +191,33 @@ class Coordinator:
         obj = action.obj
         wp = action.wp
 
-        goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
-        goal.target_pose.header.stamp = rospy.Time.now()
-  
-        goal.target_pose.pose.position.x = self.waypoints[wp][0]
-        goal.target_pose.pose.position.y = self.waypoints[wp][1]
-
         ac = None
         if obj == "drone":
+            goal = BebopMoveBaseGoal()
             ac = self.bebop_move_ac
         elif obj == "turtle":
+            goal = MoveBaseGoal()
             ac = self.turtle_move_ac
         if ac == None:
             raise CoordinatorError("No action client exist for obj %s" % obj)
 
-        if not ac.wait_for_server(timeout=rospy.Duration(5)):
+        if not ac.wait_for_server(timeout=rospy.Duration(0.1)):
             rospy.loginfo("server timeout")
+
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+
+        goal.target_pose.pose.position.x = self.waypoints[wp][0]
+        goal.target_pose.pose.position.y = self.waypoints[wp][1]
 
         # Notify action dispatcher of status
         feedback_msg = ActionFeedback(action_id = action_id, status = "action_enabled")
-        self.feedback_pub.publish(feedback_msg)        
+        self.feedback_pub.publish(feedback_msg)
 
         ac.send_goal(goal)
         ac.wait_for_result()
 
-        feedback_msg = ActionFeedback()
-        feedback_msg.action_id = action_id
-        if (ac.get_state() == GoalStatus.SUCCEEDED):
-        	feedback_msg.status = "action_achieved"
-        else:
-        	feedback_msg.status = "action_failed"
-
-        self.feedback_pub.publish(feedback_msg)
+        self._action_feedback_from_state(ac.get_state())
 
 
     def test_actions(self):
