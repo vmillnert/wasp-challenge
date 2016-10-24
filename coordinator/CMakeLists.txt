@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   move_base_msgs
+  bebop_controller
 )
 
 ## System dependencies are found with CMake's conventions
@@ -63,22 +64,23 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate actions in the 'action' folder
-add_action_files(
-   DIRECTORY
-   action
-   FILES
-   Move.action
+# add_action_files(
+#   DIRECTORY
+#   action
+#   FILES
+#   Action1.action
 #   Action2.action
-)
+#)
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   std_msgs
-   geometry_msgs
-   actionlib_msgs
-   move_base_msgs
-)
+#generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+#   geometry_msgs
+#   actionlib_msgs
+#   move_base_msgs
+#   bebop_controller
+#)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -112,7 +114,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES coordinator
-   CATKIN_DEPENDS actionlib_msgs actionlib roscpp rospy std_msgs
+   CATKIN_DEPENDS actionlib_msgs actionlib roscpp rospy std_msgs message_runtime bebop_controller
 #  DEPENDS system_lib
 )
 

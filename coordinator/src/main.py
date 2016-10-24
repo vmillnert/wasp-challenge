@@ -8,9 +8,11 @@ from diagnostic_msgs.msg import KeyValue
 from rosplan_dispatch_msgs.msg import ActionDispatch,ActionFeedback
 from actionlib import SimpleActionClient
 from actionlib_msgs.msg import GoalStatus
-from coordinator.msg import MoveAction
+from bebop_controller.msg import BebopLandAction, BebopTakeOffAction, BebopLoadAction
+from bebop_controller.msg import BebopUnloadAction, BebopFollowAction, BebopMoveBaseAction
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import sys
+
 
 class ActionName:
     goto = "goto"
@@ -19,6 +21,7 @@ class ActionName:
     follow = "follow"
     load = "load"
     unload = "unload"
+
 
 class CoordinatorError(Exception):
      def __init__(self, value):
@@ -52,9 +55,9 @@ class Coordinator:
     def __init__(self, wp_file):
         self.waypoints = self.read_waypoints(wp_file)
 
-        rospy.loginfo('/coordinator/__init__/ - Using waypoints from %s', wp_file)
-
         rospy.init_node('coordinator', anonymous=True, log_level=rospy.INFO)
+
+        rospy.loginfo('/coordinator/__init__/ - Using waypoints from %s', wp_file)
 
         # Interface to ROSplan
         rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
@@ -67,7 +70,12 @@ class Coordinator:
         rospy.sleep(0.1)
 
         #Interface to Bebop
-        self.beebop_move_ac = SimpleActionClient("BebopMoveBaseAction", MoveBaseAction)
+        self.bebop_land_ac = SimpleActionClient("BebopLandAction", BebopLandAction)
+        self.bebop_load_ac = SimpleActionClient("BebopLoadAction", BebopLoadAction)
+        self.bebop_move_ac = SimpleActionClient("BebopMoveBaseAction", BebopMoveBaseAction)
+        self.bebop_takeoff_ac = SimpleActionClient("BebopTakeOffAction", BebopTakeOffAction)
+        self.bebop_unload_ac = SimpleActionClient("BebopUnloadAction", BebopUnloadAction)
+        self.bebop_follow_ac = SimpleActionClient("BebopFollowAction", BebopFollowAction)
         rospy.sleep(0.1)
 
 
@@ -137,7 +145,7 @@ class Coordinator:
 
         ac = None
         if obj == "drone":
-            ac = self.beebop_move_ac
+            ac = self.bebop_move_ac
         elif obj == "turtle":
             ac = self.turtle_move_ac
         if ac == None:
