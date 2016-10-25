@@ -181,6 +181,10 @@ if __name__ == '__main__':
 
 
                 if command:
+                    if command_msg == 'land':
+                        command_pub.publish('manual')
+                        rospy.sleep(0.5)
+                    
                     command_pub.publish(command_msg)
                     command = False
                     print command_msg
