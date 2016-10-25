@@ -41,16 +41,17 @@ class ActionFeeder:
 
 
     def read_actions(self, filename):
-        actions = None
+        actions = []
         with open(filename, 'r') as csvfile:
             reader = csv.reader(csvfile)
-            actions = [r for r in reader]
+            for row in reader:
+                actions.append([a.strip() for a in row])
             
         return actions
 
 
     def action_feedback_callback(self, msg):
-        rospy.logdebug('action_feeder:action_dispatch_callback:%s', msg.name)
+        rospy.logdebug('action_feeder:Receiving feedback on action id: %i, status: %s', msg.action_id, msg.status)
         assert(self.current_msg.action_id == msg.action_id)
         if msg.status == "action_enabled":
             self.status = ActionStatus.RECEIVED
@@ -61,18 +62,14 @@ class ActionFeeder:
 
 
     def dispatch(self):
-        r = rospy.Rate(0.1)
+        r = rospy.Rate(10) # Hz
 
         self.action_pub.publish(self.current_msg)
         self.status = ActionStatus.SENT
-        try:
-            while self.status < ActionStatus.FAILED:
-                r.sleep()
-        except KeyboardInterrupt:
-            rospy.loginfo('action_feeder:interrupted:')
-            sys.exit(0)
+        while (not rospy.is_shutdown()) and (self.status < ActionStatus.FAILED):
+            r.sleep()
 
-        if (status == ActionStatus.FAILED):
+        if (self.status == ActionStatus.FAILED):
             raise ActionFeedError("Action failed, aborting!")
     
     def run(self):
@@ -90,4 +87,8 @@ if __name__ == '__main__':
         print("usage: action_feeder.py action_file")
     else:
         feeder = ActionFeeder(sys.argv[1])
-        feeder.run()
+        try:
+            feeder.run()
+        except rospy.ROSInterruptException:
+            pass
+
