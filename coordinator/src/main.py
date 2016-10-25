@@ -107,10 +107,10 @@ class Coordinator:
             rospy.loginfo("No action called %s for obj %s", msg.name, msg.obj)
 
 
-    def _action_feedback_from_state(self, state):
+    def _action_feedback_from_state(self, action_id, state):
         feedback_msg = ActionFeedback()
         feedback_msg.action_id = action_id
-        if (ac.get_state() == GoalStatus.SUCCEEDED):
+        if (state == GoalStatus.SUCCEEDED):
         	feedback_msg.status = "action_achieved"
         else:
         	feedback_msg.status = "action_failed"
@@ -129,7 +129,7 @@ class Coordinator:
         ac.send_goal(BebopTakeOffGoal())
         ac.wait_for_result()
 
-        self._action_feedback_from_state(ac.get_state())
+        self._action_feedback_from_state(action_id, ac.get_state())
 
 
     def action_land(self, action):
@@ -143,7 +143,7 @@ class Coordinator:
         ac.send_goal(BebopLandGoal())
         ac.wait_for_result()
 
-        self._action_feedback_from_state(ac.get_state())
+        self._action_feedback_from_state(action_id, ac.get_state())
 
 
     def action_load(self, action):
@@ -157,7 +157,7 @@ class Coordinator:
         ac.send_goal(BebopLoadGoal())
         ac.wait_for_result()
 
-        self._action_feedback_from_state(ac.get_state())
+        self._action_feedback_from_state(action_id, ac.get_state())
 
 
     def action_unload(self, action):
@@ -217,7 +217,7 @@ class Coordinator:
         ac.send_goal(goal)
         ac.wait_for_result()
 
-        self._action_feedback_from_state(ac.get_state())
+        self._action_feedback_from_state(action_id, ac.get_state())
 
 
     def test_actions(self):
