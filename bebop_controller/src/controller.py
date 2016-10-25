@@ -11,6 +11,7 @@ from PID import *
 from PIDParameters import *
 
 from bebop_controller.msg import *
+from actionlib import SimpleActionServer
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovariance
@@ -25,9 +26,9 @@ class Controller(object):
 
     _MAX_VEL = 0.3 # Maximum velocity for the drone in any one
                    # direction
-                   
+
     _TOLERANCE = 0.2 # Tolerance for the Go-to-goal controller
-    
+
     def __init__(self, name):
         self._name = name
 
@@ -36,24 +37,36 @@ class Controller(object):
         self._teleop_vel = Twist() # control-signal sent by the
                               # teleoperation keyboard
 
-                              
+
         # Control mode for the drone
         # 'manual' - from teleoperation
         # 'auto'   - go-to-goal behaviour using the PID-controller
         self._control_mode = 'manual' # start in 'manual'-mode
 
-
+        # Create all the ActionServers and then start them.
+        as_land = SimpleActionServer("BebopLandAction", BebopLandAction, execute_cb=self.cb_land, auto_start=False)
+        as_load = SimpleActionServer("BebopLoadAction", BebopLoadAction, execute_cb=self.cb_load, auto_start=False)
+        as_move = SimpleActionServer("BebopMoveBaseAction", BebopMoveBaseAction, execute_cb=self.cb_move_base, auto_start=False)
+        as_takeoff = SimpleActionServer("BebopTakeOffAction", BebopTakeOffAction, execute_cb=self.cb_takeoff, auto_start=False)
+        as_unload = SimpleActionServer("BebopUnloadAction", BebopUnloadAction, execute_cb=self.cb_unload, auto_start=False)
+        as_follow = SimpleActionServer("BebopFollowAction", BebopFollowAction, execute_cb=self.cb_follow, auto_start=False)
+        as_land.start()
+        as_load.start()
+        as_move.start()
+        as_takeoff.start()
+        as_unload.start()
+        as_follow.start()
 
 
         ####################
         # Start subscribers
-        
+
         # start the position callback
         rospy.Subscriber('/bebop/odom', Odometry, self.pos_callback)
-        
+
         # start the command callback from 'bebop_teleop'
         rospy.Subscriber('/bebop_teleop/command', String, self.teleop_command_callback)
-        
+
         # start the vellocetiy callback from 'bebop_teleop'
         rospy.Subscriber('/bebop_teleop/cmd_vel', Twist, self.teleop_velocity_callback)
 
@@ -72,7 +85,7 @@ class Controller(object):
         self._land_pub = rospy.Publisher('/bebop/land', Empty, queue_size=10)
         self._cmd_vel_pub = rospy.Publisher('/bebop/cmd_vel', Twist, queue_size=10)
 
-        
+
         #################
         # # PID Controllers
         self.xPID = PID() # pid-controller for x-direction
@@ -92,7 +105,30 @@ class Controller(object):
         self.set_goal(goal_point)
 
 
-        
+    def cb_load(self, goal):
+        pass
+
+
+    def cb_land(self, goal):
+        pass
+
+
+    def cb_follow(self, goal):
+        pass
+
+
+    def cb_unload(self, goal):
+        pass
+
+
+    def cb_takeoff(self, goal):
+        pass
+
+
+    def cb_move_base(self, goal):
+        pass
+
+
     # Sets the goal position in 'odom'-frame
     # called by the goal_listener_callback()
     def set_goal(self, goal):
@@ -118,7 +154,7 @@ class Controller(object):
 
 
 
-    # Limit the control signal v by _MAX_VEL 
+    # Limit the control signal v by _MAX_VEL
     def limit(self, v):
         if v < -self._MAX_VEL:
             v = -self._MAX_VEL
@@ -169,12 +205,12 @@ class Controller(object):
 
     # Run controller
     def run(self):
-        
+
         # We should have a loop-period of self._H
         # which means we should have a loop-rate of 1/self._H
         loop_rate = rospy.Rate(1/self.xPID.p.H)
 
-        
+
         while not rospy.is_shutdown():
             vx = 0.0
             vy = 0.0
@@ -182,7 +218,7 @@ class Controller(object):
             y = 0.0
             xref = 0.0
             yref = 0.0
-            
+
             cmd_vel = Twist()
 
 
@@ -190,21 +226,21 @@ class Controller(object):
             # which is stored as PointStamped in frame 'odom'
             xref = deepcopy(self._goal_point.point.x)
             yref = deepcopy(self._goal_point.point.y)
-            
+
             # Read my current position from the stored "_my_point"
             # which is stored as PointStamped in frame 'odom'
             x = deepcopy(self._my_point.point.x)
             y = deepcopy(self._my_point.point.y)
 
-            
+
             if self._control_mode == 'manual':
-                
+
                 # Manual mode
 
                 # Commands are sent via the teleop-controller
-                
+
                 # rospy.loginfo('%s: We are in manual mode' % self._name)
-                
+
                 cmd_vel = deepcopy(self._teleop_vel)
 
                 ######################################
@@ -219,13 +255,13 @@ class Controller(object):
                               cmd_vel.linear.y,
                               cmd_vel.angular.z)
 
-                # self._teleop_counter = self._teleop_counter + 1 
+                # self._teleop_counter = self._teleop_counter + 1
                 # if self._teleop_counter >= self._teleop_time:
                 #     # set the command to 0
                 #     self._teleop_vel = Twist()
                 #     self._teleop_counter = 0
-                    
-                
+
+
             elif self._control_mode == 'auto':
 
                 # Automatic mode
@@ -233,22 +269,22 @@ class Controller(object):
                 # Check if we are withing our tolerance:
                 if numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE:
                     # Have some distance to the goal
-                    
+
                     # PID-control to make the bebop go to the desired
                     # goal-position
-                
+
                     # rospy.loginfo('%s: We are in automatic mode' % self._name)
 
                     # Compute the control-signal ('odom'-frame)
                     # also stores the control-signal in self._vx and self._vy
                     vx = self.xPID.calculate_output(x, xref)
                     vy = self.yPID.calculate_output(y, yref)
-                    
+
                     # limit the control-signals ('odom'-frame)
                     ux = self.limit(vx)
                     uy = self.limit(vy)
 
-                    
+
                     # convert the control signal from 'odom'-frame to
                     # 'base_link'-frame
                     cmd_vel.linear.x, cmd_vel.linear.y = self.convert_control_signal(ux, uy)
@@ -257,7 +293,7 @@ class Controller(object):
                     # send control signal                #
                     self._cmd_vel_pub.publish(cmd_vel) #
                     ######################################
-                
+
                     # inform the user of control-velocities about to be sent
                     rospy.loginfo('%s: \n Distance to goal\n x: %.2f\n y: %.2f\n Velocity in [odom]:\n ux: %.2f\n uy: %.2f\n Velocity command sent: \n vx: %.2f \n vy: %.2f',
                                   self._name,
@@ -277,7 +313,7 @@ class Controller(object):
                     # We are within the tolerance for the goal!
                     rospy.loginfo('%s: We have arrived at the goal sir!',
                                   self._name)
-                    
+
                     # reset the PID controllers
                     self.xPID.reset()
                     self.yPID.reset()
@@ -287,7 +323,7 @@ class Controller(object):
                     # send control signal                #
                     self._cmd_vel_pub.publish(cmd_vel) #
                     ######################################
-                
+
                     # inform the user of control-velocities about to be sent
                     rospy.loginfo('%s:\n My pos:\n x: %.2f\n y: %.2f \n Distance to goal\n x: %.2f\n y: %.2f\n Velocity command sent: \n vx: %.2f \n vy: %.2f',
                                   self._name,
@@ -309,24 +345,24 @@ class Controller(object):
             self.takeoff()
             # reset the PID-controller
             self.xPID.reset()
-            self.yPID.reset() 
+            self.yPID.reset()
         elif msg.data == "land":
             self.land()
             # reset the PID-controller
             self.xPID.reset()
-            self.yPID.reset() 
+            self.yPID.reset()
         elif msg.data == "manual":
             rospy.loginfo('%s: Swicthed to manual mode' % self._name)
             self._control_mode = 'manual'
             # reset the PID-controller
             self.xPID.reset()
-            self.yPID.reset() 
+            self.yPID.reset()
         elif msg.data == "auto":
             rospy.loginfo('%s: Swicthed to automatic mode' % self._name)
             self._control_mode = 'auto'
             # reset the PID-controller
             self.xPID.reset()
-            self.yPID.reset() 
+            self.yPID.reset()
         else:
             rospy.loginfo('%s: Got unknown command: %s \n', self._name, msg.data)
 
