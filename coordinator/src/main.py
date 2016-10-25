@@ -47,7 +47,7 @@ class Action:
 
         if self.obj == None:
             raise CoordinatorError("No key obj in action dispatch parameter")
-        if self.wp == None:
+        if self.wp == None and self.name == ActionName.goto:
             raise CoordinatorError("No key wp in action dispatch parameter")
 
 
