@@ -240,5 +240,5 @@ if __name__ == '__main__':
     else:
         coordinator = Coordinator(sys.argv[1])
         rospy.sleep(0.1)
-        coordinator.test_actions()
+        #coordinator.test_actions()
         coordinator.spin()

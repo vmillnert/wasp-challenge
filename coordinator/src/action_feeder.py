@@ -34,10 +34,11 @@ class ActionFeeder:
 
         rospy.init_node('action_feeder', anonymous=True, log_level=rospy.INFO)
 
-        rospy.Subscriber("/kcl_rosplan/action_feedback", ActionFeedback, self.action_feedback_callback)
-
         self.action_pub = rospy.Publisher("/kcl_rosplan/action_dispatch", ActionDispatch, queue_size=10)
-        rospy.sleep(0.1)
+
+        rospy.Subscriber("/kcl_rosplan/action_feedback", ActionFeedback, self.action_feedback_callback)
+        
+        rospy.sleep(2)
 
 
     def read_actions(self, filename):
@@ -62,11 +63,14 @@ class ActionFeeder:
 
 
     def dispatch(self):
+        rospy.loginfo('action_feeder:Dispatching action id: %i', self.current_msg.action_id)
         r = rospy.Rate(10) # Hz
 
         self.action_pub.publish(self.current_msg)
         self.status = ActionStatus.SENT
-        while (not rospy.is_shutdown()) and (self.status < ActionStatus.FAILED):
+        while (self.status < ActionStatus.FAILED):
+            if rospy.is_shutdown():
+                sys.exit()
             r.sleep()
 
         if (self.status == ActionStatus.FAILED):
