@@ -171,6 +171,8 @@ class Coordinator:
         ac.send_goal(BebopUnloadGoal())
         ac.wait_for_result()
 
+        self._action_feedback_from_state(action_id, ac.get_state())
+
 
     def action_follow(self, action):
         rospy.loginfo('/coordinator/action_follow for %s', action.obj)
@@ -182,6 +184,8 @@ class Coordinator:
 
         ac.send_goal(BebopFollowGoal())
         ac.wait_for_result()
+
+        self._action_feedback_from_state(action_id, ac.get_state())
 
 
     def action_goto(self, action):
