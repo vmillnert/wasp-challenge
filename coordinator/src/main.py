@@ -205,7 +205,7 @@ class Coordinator:
         if ac == None:
             raise CoordinatorError("No action client exist for obj %s" % obj)
 
-        if not ac.wait_for_server(timeout=rospy.Duration(0.1)):
+        if not ac.wait_for_server(timeout=rospy.Duration(10)):
             rospy.loginfo("server timeout")
 
         goal.target_pose.header.frame_id = "map"
@@ -213,6 +213,7 @@ class Coordinator:
 
         goal.target_pose.pose.position.x = self.waypoints[wp][0]
         goal.target_pose.pose.position.y = self.waypoints[wp][1]
+        goal.target_pose.pose.orientation.w = 1
 
         # Notify action dispatcher of status
         feedback_msg = ActionFeedback(action_id = action_id, status = "action_enabled")
