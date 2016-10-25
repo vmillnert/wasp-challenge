@@ -30,9 +30,9 @@ class ActionFeeder:
         self.current_msg = ActionDispatch()
         self.status = ActionStatus.START
 
-        rospy.logdebug('action_feeder:__init__: Using actions from %s', wp_file)
+        rospy.loginfo('action_feeder:__init__: Using actions from %s', wp_file)
 
-        rospy.init_node('action_feeder', anonymous=True, log_level=rospy.DEBUG)
+        rospy.init_node('action_feeder', anonymous=True, log_level=rospy.INFO)
 
         rospy.Subscriber("/kcl_rosplan/action_feedback", ActionFeedback, self.action_feedback_callback)
 
@@ -51,7 +51,7 @@ class ActionFeeder:
 
 
     def action_feedback_callback(self, msg):
-        rospy.logdebug('action_feeder:Receiving feedback on action id: %i, status: %s', msg.action_id, msg.status)
+        rospy.loginfo('action_feeder:Receiving feedback on action id: %i, status: %s', msg.action_id, msg.status)
         assert(self.current_msg.action_id == msg.action_id)
         if msg.status == "action_enabled":
             self.status = ActionStatus.RECEIVED
