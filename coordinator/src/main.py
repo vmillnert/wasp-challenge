@@ -63,7 +63,7 @@ class Coordinator:
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
 
         #Interface to Turtlebot
-        self.turtle_move_ac = SimpleActionClient("TurtleMoveBaseAction", MoveBaseAction)
+        self.turtle_move_ac = SimpleActionClient("move_base", MoveBaseAction)
 
         #Interface to Bebop
         self.bebop_land_ac = SimpleActionClient("BebopLandAction", BebopLandAction)
