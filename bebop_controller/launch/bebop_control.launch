@@ -1,9 +1,9 @@
 <launch>
-	<node 
-	  name="bebop_controller" pkg="bebop_controller" type="bebop_controller.py"
+	<node
+	  name="bebop_controller" pkg="bebop_controller" type="controller.py"
 	  output="screen"
 	  />
-	<node 
+	<node
 	  name="bebop_teleop" pkg="bebop_controller" type="bebop_teleop.py"
 	  output="screen"
 	  />
