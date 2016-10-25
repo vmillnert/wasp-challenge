@@ -59,9 +59,6 @@ class Coordinator:
 
         rospy.loginfo('/coordinator/__init__/ - Using waypoints from %s', wp_file)
 
-        # Interface to ROSplan
-        rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
-
         # Set up Publisher
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
 
@@ -75,6 +72,9 @@ class Coordinator:
         self.bebop_takeoff_ac = SimpleActionClient("BebopTakeOffAction", BebopTakeOffAction)
         self.bebop_unload_ac = SimpleActionClient("BebopUnloadAction", BebopUnloadAction)
         self.bebop_follow_ac = SimpleActionClient("BebopFollowAction", BebopFollowAction)
+
+        # Interface to ROSplan
+        rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
 
 
     def read_waypoints(self, filename):
