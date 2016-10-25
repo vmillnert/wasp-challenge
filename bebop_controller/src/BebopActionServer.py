@@ -13,18 +13,18 @@ class BebopActionServer(object):
 
     def __init__(self):
         # Create all the ActionServers and then start them.
-        as_land = SimpleActionServer("BebopLandAction", BebopLandAction, execute_cb=self.cb_land, auto_start=False)
-        as_load = SimpleActionServer("BebopLoadAction", BebopLoadAction, execute_cb=self.cb_load, auto_start=False)
-        as_move = SimpleActionServer("BebopMoveBaseAction", BebopMoveBaseAction, execute_cb=self.cb_move_base, auto_start=False)
-        as_takeoff = SimpleActionServer("BebopTakeOffAction", BebopTakeOffAction, execute_cb=self.cb_takeoff, auto_start=False)
-        as_unload = SimpleActionServer("BebopUnloadAction", BebopUnloadAction, execute_cb=self.cb_unload, auto_start=False)
-        as_follow = SimpleActionServer("BebopFollowAction", BebopFollowAction, execute_cb=self.cb_follow, auto_start=False)
-        as_land.start()
-        as_load.start()
-        as_move.start()
-        as_takeoff.start()
-        as_unload.start()
-        as_follow.start()
+        self.as_land = SimpleActionServer("BebopLandAction", BebopLandAction, execute_cb=self.cb_land, auto_start=False)
+        self.as_load = SimpleActionServer("BebopLoadAction", BebopLoadAction, execute_cb=self.cb_load, auto_start=False)
+        self.as_move = SimpleActionServer("BebopMoveBaseAction", BebopMoveBaseAction, execute_cb=self.cb_move_base, auto_start=False)
+        self.as_takeoff = SimpleActionServer("BebopTakeOffAction", BebopTakeOffAction, execute_cb=self.cb_takeoff, auto_start=False)
+        self.as_unload = SimpleActionServer("BebopUnloadAction", BebopUnloadAction, execute_cb=self.cb_unload, auto_start=False)
+        self.as_follow = SimpleActionServer("BebopFollowAction", BebopFollowAction, execute_cb=self.cb_follow, auto_start=False)
+        self.as_land.start()
+        self.as_load.start()
+        self.as_move.start()
+        self.as_takeoff.start()
+        self.as_unload.start()
+        self.as_follow.start()
 
         rospy.loginfo("%s running", rospy.get_name())
 
@@ -34,27 +34,33 @@ class BebopActionServer(object):
 
 
     def cb_load(self, goal):
-        pass
+        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        self.as_load.set_succeeded()
 
 
     def cb_land(self, goal):
-        pass
+        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        self.as_land.set_succeeded()
 
 
     def cb_follow(self, goal):
-        pass
+        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        self.as_follow.set_succeeded()
 
 
     def cb_unload(self, goal):
-        pass
+        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        self.as_unload.set_succeeded()
 
 
     def cb_takeoff(self, goal):
-        pass
+        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        self.as_takeoff.set_succeeded()
 
 
     def cb_move_base(self, goal):
-        pass
+        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        self.as_move.set_succeeded()
 
 
 if __name__ == '__main__':
