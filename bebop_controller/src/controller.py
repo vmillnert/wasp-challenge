@@ -16,6 +16,7 @@ from geometry_msgs.msg import TwistWithCovariance
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Vector3Stamped
 from std_msgs.msg import Empty
 from std_msgs.msg import String
 
@@ -25,11 +26,17 @@ class Controller(object):
                    # direction
 
     _TOLERANCE = 0.2 # Tolerance for the Go-to-goal controller
-
+    _HEIGHT_TOL = 0.2 # tolerance for the height-controller
+    
     def __init__(self, name):
         self._name = name
 
-        self._goal_point = PointStamped() # goal PointStamped ('odom'-frame)
+        # goal height for the bebop
+        self._goal_height = 1.5 # initial height goal of the bebop
+        
+        # goal PointStamped ('odom'-frame)
+        # only x & y position
+        self._goal_point = PointStamped() 
         self._my_point = PointStamped() # current PointStamped ('odom'-frame)
         self._teleop_vel = Twist() # control-signal sent by the
                               # teleoperation keyboard
@@ -73,6 +80,7 @@ class Controller(object):
         # # PID Controllers
         self.xPID = PID() # pid-controller for x-direction
         self.yPID = PID() # pid-controller for y-direction
+        self.zPID = PID() # pid-controller for z-direction
 
         # Note: when actually sending the command signal it has to be
         # transformed into 'base_link'-frame before beingn sent
@@ -83,11 +91,16 @@ class Controller(object):
         goal_point = PointStamped()
         goal_point.header.stamp = rospy.Time.now()
         goal_point.header.frame_id = 'odom'
-        goal_point.point.x = 0.0
-        goal_point.point.y = 0.0
+        goal_point.point.x = 0.0 # goal in x
+        goal_point.point.y = 0.0 # goal in y
         self.set_goal(goal_point)
 
 
+    # Set height goal of the Bebop
+    def set_height(self, goal):
+        self._goal_height = deepcopy(goal)
+    
+        
     # Sets the goal position in 'odom'-frame
     # called by the goal_listener_callback()
     def set_goal(self, goal):
@@ -139,27 +152,38 @@ class Controller(object):
         #               self._name, data.header.frame_id)
 
 
-    # Takes the control signal vx and vy (velocity commands) expressed
+    # Takes the control-vector vx and vy (velocity commands) expressed
     # in 'odom'-frame and transforms it to 'base_link'-frame
-    def convert_control_signal(self, vx, vy):
+    def convert_control_signal(self, vx, vy, vz):
+        # Try to transform the velocity-vector instead
         # Current position is stored in 'odom'-frame
-        control = PointStamped()
-        control = deepcopy(self._my_point)
-        control.point.x += deepcopy(vx)
-        control.point.y += deepcopy(vy)
+        # control = PointStamped()
+        # control = deepcopy(self._my_point)
+        # control.point.x += deepcopy(vx)
+        # control.point.y += deepcopy(vy)
+        control = Vector3Stamped()
+        control.header = deepcopy(self._my_point.header)
+        control.vector.x = deepcopy(vx)
+        control.vector.y = deepcopy(vy)
+        control.vector.z = deepcopy(vz)
         try:
-            control = self._listener.transformPoint('base_link',
-                                                    control)
+            # control = self._listener.transformPoint('base_link',
+            #                                         control)
+            control = self._listener.transformVector3('base_link', control)
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
             rospy.loginfo(e)
             # Something went wrong, send 0 as control-signal
-            control.point.x = 0.0
-            control.point.y = 0.0
-            control.point.z = 0.0
+            # control.point.x = 0.0
+            # control.point.y = 0.0
+            # control.point.z = 0.0
+            control.vector.x = 0.0
+            control.vector.y = 0.0
+            control.vector.z = 0.0
             pass
 
         # return the x and y control-signals
-        return control.point.x, control.point.y
+        # return control.point.x, control.point.y
+        return control.vector.x, control.vector.y, control.vector.z
 
 
     # Run controller
@@ -173,11 +197,13 @@ class Controller(object):
         while not rospy.is_shutdown():
             vx = 0.0
             vy = 0.0
+            vz = 0.0
             x = 0.0
             y = 0.0
+            z = 0.0
             xref = 0.0
             yref = 0.0
-
+            zref = 0.0
             cmd_vel = Twist()
 
 
@@ -185,11 +211,13 @@ class Controller(object):
             # which is stored as PointStamped in frame 'odom'
             xref = deepcopy(self._goal_point.point.x)
             yref = deepcopy(self._goal_point.point.y)
-
+            zref = deepcopy(self._goal_height)
+            
             # Read my current position from the stored "_my_point"
             # which is stored as PointStamped in frame 'odom'
             x = deepcopy(self._my_point.point.x)
             y = deepcopy(self._my_point.point.y)
+            z = deepcopy(self._my_point.point.z)
 
 
             if self._control_mode == 'manual':
@@ -208,10 +236,11 @@ class Controller(object):
                 ######################################
 
                 # inform the user of control-velocities about to be sent
-                rospy.loginfo('%s: Velocity command sent: \n vx: %.2f \n vy: %.2f \n th: %.2f',
+                rospy.loginfo('%s: Velocity command sent: \n vx: %.2f \n vy: %.2f \n vz: %.2f\n th: %.2f',
                               self._name,
                               cmd_vel.linear.x,
                               cmd_vel.linear.y,
+                              cmd_vel.linear.z,
                               cmd_vel.angular.z)
 
                 # self._teleop_counter = self._teleop_counter + 1
@@ -226,7 +255,9 @@ class Controller(object):
                 # Automatic mode
 
                 # Check if we are withing our tolerance:
-                if numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE:
+                if (numpy.sqrt((xref-x)**2 + (yref-y)**2) >
+                    self._TOLERANCE) or (numpy.abs(zref-z) >
+                                          self._HEIGHT_TOL) :
                     # Have some distance to the goal
 
                     # PID-control to make the bebop go to the desired
@@ -238,15 +269,17 @@ class Controller(object):
                     # also stores the control-signal in self._vx and self._vy
                     vx = self.xPID.calculate_output(x, xref)
                     vy = self.yPID.calculate_output(y, yref)
-
+                    vz = self.zPID.calculate_output(z, zref)
+                    
                     # limit the control-signals ('odom'-frame)
                     ux = self.limit(vx)
                     uy = self.limit(vy)
+                    uz = self.limit(vz)
 
 
                     # convert the control signal from 'odom'-frame to
                     # 'base_link'-frame
-                    cmd_vel.linear.x, cmd_vel.linear.y = self.convert_control_signal(ux, uy)
+                    cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.linear.z = self.convert_control_signal(ux,uy,uz)
 
                     ######################################
                     # send control signal                #
@@ -254,19 +287,23 @@ class Controller(object):
                     ######################################
 
                     # inform the user of control-velocities about to be sent
-                    rospy.loginfo('%s: \n Distance to goal\n x: %.2f\n y: %.2f\n Velocity in [odom]:\n ux: %.2f\n uy: %.2f\n Velocity command sent: \n vx: %.2f \n vy: %.2f',
+                    rospy.loginfo('%s: \n Distance to goal\n x: %.2f\n y: %.2f\n z: %.2f\n Velocity in [odom]:\n ux: %.2f\n uy: %.2f\n uz: %.2f\n Velocity command sent: \n vx: %.2f \n vy: %.2f\n vz: %.2f\n',
                                   self._name,
                                   xref-x,
                                   yref-y,
+                                  zref-z,
                                   ux,
                                   uy,
+                                  uz,
                                   cmd_vel.linear.x,
-                                  cmd_vel.linear.y)
+                                  cmd_vel.linear.y,
+                                  cmd_vel.linear.z)
 
                     # update the state
 
                     self.xPID.update_state(ux)
                     self.yPID.update_state(uy)
+                    self.zPID.update_state(uz)
 
                 else:
                     # We are within the tolerance for the goal!
@@ -284,14 +321,14 @@ class Controller(object):
                     ######################################
 
                     # inform the user of control-velocities about to be sent
-                    rospy.loginfo('%s:\n My pos:\n x: %.2f\n y: %.2f \n Distance to goal\n x: %.2f\n y: %.2f\n Velocity command sent: \n vx: %.2f \n vy: %.2f',
+                    rospy.loginfo('%s: \n Distance to goal\n x: %.2f\n y: %.2f\n z: %.2f\n Velocity command sent: \n vx: %.2f \n vy: %.2f\n vz: %.2f\n',
                                   self._name,
-                                  x,
-                                  y,
-                                  x-xref,
-                                  y-yref,
+                                  xref-x,
+                                  yref-y,
+                                  zref-z,
                                   cmd_vel.linear.x,
-                                  cmd_vel.linear.y)
+                                  cmd_vel.linear.y,
+                                  cmd_vel.linear.z)
 
 
             loop_rate.sleep()

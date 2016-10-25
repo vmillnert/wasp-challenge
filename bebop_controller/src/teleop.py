@@ -15,26 +15,26 @@ from geometry_msgs.msg import Twist
 
 # Display some text
 msg = """
-Reading from the keyboard and publishing to Bebop! 
----------------------------
+Reading from the keyboard and publishing to Bebop!   
+---------------------------  
 Moving around: 
 
 Use the arrows:
 
-Up-arrow:     Forward  
-Left-arrow:    Rotate left  
-Right-arrow:  Rotate right  
-Down-arrow:  Backward  
+Up-arrow:     Forward   
+Left-arrow:    Rotate left   
+Right-arrow:  Rotate right   
+Down-arrow:  Backward   
 
-, : up (+z) 
-. : down (-z) 
+, : up (+z)  
+. : down (-z)  
 
-w/s : increase/decrease max speeds by 10% 
-e/d : increase/decrease only linear speed by 10% 
-r/f : increase/decrease only angular speed by 10% 
+w/s : increase/decrease max speeds by 10%  
+e/d : increase/decrease only linear speed by 10%  
+r/f : increase/decrease only angular speed by 10%  
 
-a: takeoff
-z: land
+a: takeoff 
+z: land 
 
 x: MANUAL MODE  
 c: AUTOMATIC MODE  
