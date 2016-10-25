@@ -47,7 +47,7 @@ class Action:
 
         if self.obj == None:
             raise CoordinatorError("No key obj in action dispatch parameter")
-        if self.wp == None:
+        if self.wp == None and self.name == ActionName.goto:
             raise CoordinatorError("No key wp in action dispatch parameter")
 
 
@@ -58,9 +58,6 @@ class Coordinator:
         rospy.init_node('coordinator', anonymous=True, log_level=rospy.INFO)
 
         rospy.loginfo('/coordinator/__init__/ - Using waypoints from %s', wp_file)
-
-        # Interface to ROSplan
-        rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
 
         # Set up Publisher
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
@@ -75,6 +72,9 @@ class Coordinator:
         self.bebop_takeoff_ac = SimpleActionClient("BebopTakeOffAction", BebopTakeOffAction)
         self.bebop_unload_ac = SimpleActionClient("BebopUnloadAction", BebopUnloadAction)
         self.bebop_follow_ac = SimpleActionClient("BebopFollowAction", BebopFollowAction)
+
+        # Interface to ROSplan
+        rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
 
 
     def read_waypoints(self, filename):
@@ -171,6 +171,8 @@ class Coordinator:
         ac.send_goal(BebopUnloadGoal())
         ac.wait_for_result()
 
+        self._action_feedback_from_state(action_id, ac.get_state())
+
 
     def action_follow(self, action):
         rospy.loginfo('/coordinator/action_follow for %s', action.obj)
@@ -182,6 +184,8 @@ class Coordinator:
 
         ac.send_goal(BebopFollowGoal())
         ac.wait_for_result()
+
+        self._action_feedback_from_state(action_id, ac.get_state())
 
 
     def action_goto(self, action):
@@ -240,5 +244,5 @@ if __name__ == '__main__':
     else:
         coordinator = Coordinator(sys.argv[1])
         rospy.sleep(0.1)
-        coordinator.test_actions()
+        #coordinator.test_actions()
         coordinator.spin()

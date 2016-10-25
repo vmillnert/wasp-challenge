@@ -34,32 +34,32 @@ class BebopActionServer(object):
 
 
     def cb_load(self, goal):
-        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        rospy.loginfo("/BebopActionServer/cb_load action_id %s", self.as_load.current_goal.get_goal_id().id)
         self.as_load.set_succeeded()
 
 
     def cb_land(self, goal):
-        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        rospy.loginfo("/BebopActionServer/cb_land action_id %s", self.as_land.current_goal.get_goal_id().id)
         self.as_land.set_succeeded()
 
 
     def cb_follow(self, goal):
-        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        rospy.loginfo("/BebopActionServer/cb_follow action_id %s", self.as_follow.current_goal.get_goal_id().id)
         self.as_follow.set_succeeded()
 
 
     def cb_unload(self, goal):
-        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        rospy.loginfo("/BebopActionServer/cb_unload action_id %s", self.as_unload.current_goal.get_goal_id().id)
         self.as_unload.set_succeeded()
 
 
     def cb_takeoff(self, goal):
-        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        rospy.loginfo("/BebopActionServer/cb_takeoff action_id %s", self.as_takeoff.current_goal.get_goal_id().id)
         self.as_takeoff.set_succeeded()
 
 
     def cb_move_base(self, goal):
-        rospy.loginfo("/BebopActionServer/cb_load action_id %f", goal.goal_id)
+        rospy.loginfo("/BebopActionServer/cb_move_base action_id %s", self.as_move.current_goal.get_goal_id().id)
         self.as_move.set_succeeded()
 
 

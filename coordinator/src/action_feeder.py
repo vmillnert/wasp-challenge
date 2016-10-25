@@ -30,14 +30,15 @@ class ActionFeeder:
         self.current_msg = ActionDispatch()
         self.status = ActionStatus.START
 
-        rospy.logdebug('action_feeder:__init__: Using actions from %s', wp_file)
+        rospy.loginfo('action_feeder:__init__: Using actions from %s', wp_file)
 
-        rospy.init_node('action_feeder', anonymous=True, log_level=rospy.DEBUG)
-
-        rospy.Subscriber("/kcl_rosplan/action_feedback", ActionFeedback, self.action_feedback_callback)
+        rospy.init_node('action_feeder', anonymous=True, log_level=rospy.INFO)
 
         self.action_pub = rospy.Publisher("/kcl_rosplan/action_dispatch", ActionDispatch, queue_size=10)
-        rospy.sleep(0.1)
+
+        rospy.Subscriber("/kcl_rosplan/action_feedback", ActionFeedback, self.action_feedback_callback)
+        
+        rospy.sleep(2)
 
 
     def read_actions(self, filename):
@@ -51,7 +52,7 @@ class ActionFeeder:
 
 
     def action_feedback_callback(self, msg):
-        rospy.logdebug('action_feeder:Receiving feedback on action id: %i, status: %s', msg.action_id, msg.status)
+        rospy.loginfo('action_feeder:Receiving feedback on action id: %i, status: %s', msg.action_id, msg.status)
         assert(self.current_msg.action_id == msg.action_id)
         if msg.status == "action_enabled":
             self.status = ActionStatus.RECEIVED
@@ -62,11 +63,14 @@ class ActionFeeder:
 
 
     def dispatch(self):
+        rospy.loginfo('action_feeder:Dispatching action id: %i', self.current_msg.action_id)
         r = rospy.Rate(10) # Hz
 
         self.action_pub.publish(self.current_msg)
         self.status = ActionStatus.SENT
-        while (not rospy.is_shutdown()) and (self.status < ActionStatus.FAILED):
+        while (self.status < ActionStatus.FAILED):
+            if rospy.is_shutdown():
+                sys.exit()
             r.sleep()
 
         if (self.status == ActionStatus.FAILED):
