@@ -41,6 +41,8 @@ class Controller(object):
     def __init__(self, name):
         self._name = name
 
+        self.action_status = ActionStatus.IDLE
+        
         # The child frame for the drone
         self._child_frame_id = self._name + '/base_link'
         self._parent_frame_id = self._name + '/odom'
@@ -105,12 +107,10 @@ class Controller(object):
         self.zPID = PID() # pid-controller for z-direction
         self.yawPID = yawPID() # pid-controller for the yaw (needs a special pid-controller due to the angles)
 
-        # Note: when actually sending the command signal it has to be
-        # transformed into 'base_link'-frame before beingn sent
-
         ########################
 
         # Set goal position here for now
+        # This is only used for takeoff from teleoperation
         goal_point = PointStamped()
         goal_point.header.stamp = rospy.Time.now()
         goal_point.header.frame_id = self._parent_frame_id
@@ -122,10 +122,13 @@ class Controller(object):
     # Set yaw goal of the bebop
     def set_yaw(self, yaw):
         self._goal_yaw = deepcopy(yaw)
-
+        self.action_status = ActionStatus.STARTED
+                
     # Set height goal of the Bebop
     def set_height(self, height):
         self._goal_height = deepcopy(height)
+        self.action_status = ActionStatus.STARTED
+
     
         
     # Sets the goal position in 'odom'-frame
@@ -134,7 +137,6 @@ class Controller(object):
     # set_goal(point, height, yaw)
     # and that if height=0 it's not considered and similarily for the yaw
     def set_goal(self, goal):
-
         # check if it for some reason is not given in 'odom'-frame
         # if not goal.header.frame_id == self._my_point.header.frame_id:
         if not goal.header.frame_id == self._my_pose.header.frame_id:
@@ -142,6 +144,7 @@ class Controller(object):
             try:
                 goal = self._listener.transformPoint(self._child_frame_id,
                                                      goal)
+                self.action_status = ActionStatus.STARTED
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
                 rospy.loginfo(e)
                 # Something went wrong, send 0 as control-signal
@@ -153,7 +156,7 @@ class Controller(object):
                               self._name,
                               goal.header.frame_id,
                               self._my_pose.header.frame_id)
-                
+                self.action_status = ActionStatus.FAILED            
                 pass
 
         # Now we are sure it is in the correct frame
@@ -236,7 +239,7 @@ class Controller(object):
 
     # Make somebode know whether we have reached our goal or not
     def get_action_status(self):
-        return deepcopy(self.reached_goal)
+        return deepcopy(self.action_status)
 
     # Abort current action goal
     # Set the goal-point to be the current position
@@ -254,6 +257,7 @@ class Controller(object):
         self.yPID.reset()
         self.zPID.reset()
         self.yawPID.reset()
+        self.action_status = ActionStatus.FAILED
 
     
     # Run controller
@@ -299,8 +303,11 @@ class Controller(object):
             yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,self._my_pose.pose.orientation.y,self._my_pose.pose.orientation.z,self._my_pose.pose.orientation.w])[2])
             
             if self._control_mode == 'manual':
-
                 # Manual mode
+                                  
+                # the current action failed beacuse we went into manual mode
+                if self.action_status == ActionStatus.STARTED:
+                    self.action_status = ActionStatus.FAILED
 
                 # Commands are sent via the teleop-controller
 
@@ -327,19 +334,21 @@ class Controller(object):
                 #     self._teleop_vel = Twist()
                 #     self._teleop_counter = 0
 
+                                  
 
+            # check if we are in automatic-mode or if the action has been aborted
             elif self._control_mode == 'auto':
-
+                                  
                 # Automatic mode
-                self.goal_reached = (numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE) \
-                    or (numpy.abs(zref-z) >  self._HEIGHT_TOL) \
-                    or (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) > self._YAW_TOL):
+                self.goal_reached = (numpy.sqrt((xref-x)**2 + (yref-y)**2) < self._TOLERANCE) \
+                    and (numpy.abs(zref-z) <  self._HEIGHT_TOL) \
+                    and (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) < self._YAW_TOL):
 
                 # Check if we are withing our tolerance:
                 # if (numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE) \
                 #     or (numpy.abs(zref-z) >  self._HEIGHT_TOL) \
                 #     or (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) > self._YAW_TOL):
-                if self.goal_reached:
+                if not self.goal_reached:
                     # Have some distance to the goal
 
                     # PID-control to make the bebop go to the desired
@@ -397,6 +406,10 @@ class Controller(object):
                     rospy.loginfo('%s: We have arrived at the goal sir!',
                                   self._name)
 
+                    if self.action_status == ActionStatus.STARTED:
+                        self.action_status = ActionStatus.FINISHED
+
+
                     # reset the PID controllers
                     self.xPID.reset()
                     self.yPID.reset()
@@ -405,7 +418,7 @@ class Controller(object):
 
                     ######################################
                     # send control signal                #
-                    self._cmd_vel_pub.publish(cmd_vel) #
+                    self._cmd_vel_pub.publish(cmd_vel)   #
                     ######################################
 
                     # inform the user of control-velocities about to be sent
@@ -419,6 +432,7 @@ class Controller(object):
                     #               cmd_vel.linear.y,
                     #               cmd_vel.linear.z,
                     #               cmd_vel.angular.z)
+                
 
 
             loop_rate.sleep()
@@ -454,27 +468,45 @@ class Controller(object):
 
 
     # Make the drone takeoff
+    # called from the Bebop Action Server
     def takeoff(self):
         rospy.loginfo('%s: Drone is taking off \n' % self._name)
         msg = Empty()
         rospy.sleep(0.5)
+        self._goal_point = PointStamped()
+        self._goal_point.header = deepcopy(self._my_pose.header)
+        self._goal_point.point = deepcopy(self._my_pose.pose.position)
+        # set goal-height to be current height
+        self._goal_height = 1.5
+        # set goal-yaw to be current yaw
+        self._goal_yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,self._my_pose.pose.orientation.y,self._my_pose.pose.orientation.z,self._my_pose.pose.orientation.w])[2]
+        # reset the parameters
+        self.xPID.reset()
+        self.yPID.reset()
+        self.zPID.reset()
+        self.yawPID.reset()
+        self.action_status = ActionStatus.STARTED
         ######################################
         # send takeoff message               #
-        self._takeoff_pub.publish(Empty()) #
+        self._takeoff_pub.publish(Empty())   #
         ######################################
 
     # Make the drone land
+    # called from the Bebop Action Server
+    # Should use Ardrone3PilotingStateFlyingStateChanged to determine 
+    # if it has landed or not
     def land(self):
         rospy.loginfo('%s: Drone is landing \n' % self._name)
         msg = Empty()
         rospy.sleep(0.5)
         ######################################
         # send takeoff message               #
-        self._land_pub.publish(Empty())    #
+        self._land_pub.publish(Empty())      #
         ######################################
                                   
     
     # set the mode of the drone
+    # called from the Bebop Action Server
     # mode: 'auto' - automatic mode
     # mode: 'manual' - manual mode
     def set_mode(self, mode):
@@ -487,10 +519,9 @@ class Controller(object):
         
 
     # returns the current mode
-    def get_mode(self):
-        return deepcopy(self._control_mode)
-                        
-
+    # called from the Bebop Action Server
+    def get_action_status(self):
+        return deepcopy(self.action_status)
 
 
 if __name__ == '__main__':
