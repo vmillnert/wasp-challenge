@@ -177,10 +177,12 @@ class Controller(object):
                 pass
             
         # Now we now that it is in the correct frame
-        self.action_status = ActionStatus.STARTED
-        rospy.sleep(1)
-        rospy.loginfo('%s: Got a new goal\n x: %.2f\n y: %.2f', self._name, goal.point.x, goal.point.y)
         self._goal_point = deepcopy(goal)
+        self.action_status = ActionStatus.STARTED
+        rospy.loginfo('%s: Got a new goal\n x: %.2f\n y: %.2f', self._name, goal.point.x, goal.point.y)
+        rospy.loginfo('%s: Action_status: %d\n', self._name, self.action_status)
+        # rospy.sleep(1)
+
 
 
 
@@ -327,12 +329,13 @@ class Controller(object):
             y = deepcopy(self._my_pose.pose.position.y)
             z = deepcopy(self._my_pose.pose.position.z)
             yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,self._my_pose.pose.orientation.y,self._my_pose.pose.orientation.z,self._my_pose.pose.orientation.w])[2])
-            
+            action_status = deepcopy(self.action_status)
+
             if self._control_mode == 'manual':
                 # Manual mode
                                   
                 # the current action failed beacuse we went into manual mode
-                if self.action_status == ActionStatus.STARTED:
+                if action_status == ActionStatus.STARTED:
                     self.action_status = ActionStatus.FAILED
 
                 # Commands are sent via the teleop-controller
@@ -354,16 +357,11 @@ class Controller(object):
                 #               cmd_vel.linear.z,
                 #               cmd_vel.angular.z)
 
-                # self._teleop_counter = self._teleop_counter + 1
-                # if self._teleop_counter >= self._teleop_time:
-                #     # set the command to 0
-                #     self._teleop_vel = Twist()
-                #     self._teleop_counter = 0
-
-                                  
 
             # check if we are in automatic-mode or if the action has been aborted
             elif self._control_mode == 'auto' and (not self.landing):
+                rospy.loginfo('%s: \n self.action_status: %d\n action_status: %d \n', 
+                              self._name, self.action_status, action_status)
                                   
                 # Automatic mode
                 self.goal_reached = (numpy.sqrt((xref-x)**2 + (yref-y)**2) < self._TOLERANCE) \
@@ -404,21 +402,6 @@ class Controller(object):
                     self._cmd_vel_pub.publish(cmd_vel) #
                     ######################################
 
-                    # inform the user of control-velocities about to be sent
-                    # rospy.loginfo('%s: \n Distance to goal\n x: %.2f\n y: %.2f\n z: %.2f\n yaw: %.2f\n Velocity in [odom]:\n ux: %.2f\n uy: %.2f\n uz: %.2f\n yaw: %.2f \n Velocity command sent: \n vx: %.2f \n vy: %.2f\n vz: %.2f\n yaw: %.2f\n',
-                    #               self._name,
-                    #               xref-x,
-                    #               yref-y,
-                    #               zref-z,
-                    #               yawref-yaw,
-                    #               ux,
-                    #               uy,
-                    #               uz,
-                    #               uyaw,
-                    #               cmd_vel.linear.x,
-                    #               cmd_vel.linear.y,
-                    #               cmd_vel.linear.z,
-                    #               cmd_vel.angular.z)
 
                     # update the state
 
@@ -429,11 +412,24 @@ class Controller(object):
 
                 else:
                     # We are within the tolerance for the goal!
-                    rospy.loginfo('%s: We have arrived at the goal sir!',
-                                  self._name)
+                    rospy.loginfo('%s: \n self.action_status: %d\n action_status: %d \n', 
+                                  self._name, self.action_status, action_status)
 
-                    if self.action_status == ActionStatus.STARTED:
-                        self.action_status = ActionStatus.COMPLETED
+                    if action_status == ActionStatus.STARTED:
+                        rospy.loginfo('%s: \n action_status==STARTED \n self.action_status: %d\n action_status: %d \n', 
+                                      self._name, self.action_status, action_status)
+
+                        if action_status==self.action_status:
+                            self.action_status = ActionStatus.COMPLETED
+                            rospy.loginfo('%s: We have arrived at the goal sir!',
+                                          self._name)
+                            rospy.loginfo('%s: \n Distance to goal\n x: %.2f\n y: %.2f\n z: %.2f\n',
+                                          self._name,
+                                          xref-x,
+                                          yref-y,
+                                          zref-z)
+
+
 
 
                     # reset the PID controllers
@@ -446,19 +442,6 @@ class Controller(object):
                     # send control signal                #
                     self._cmd_vel_pub.publish(cmd_vel)   #
                     ######################################
-
-                    # inform the user of control-velocities about to be sent
-                    # rospy.loginfo('%s: \n Distance to goal\n x: %.2f\n y: %.2f\n z: %.2f\n yaw: %.2f \n Velocity command sent: \n vx: %.2f \n vy: %.2f\n vz: %.2f\n yaw: %.2f\n',
-                    #               self._name,
-                    #               xref-x,
-                    #               yref-y,
-                    #               zref-z,
-                    #               yawref-yaw,
-                    #               cmd_vel.linear.x,
-                    #               cmd_vel.linear.y,
-                    #               cmd_vel.linear.z,
-                    #               cmd_vel.angular.z)
-                
 
 
             loop_rate.sleep()
@@ -529,6 +512,7 @@ class Controller(object):
         rospy.loginfo('%s: Drone is landing \n' % self._name)
         msg = Empty()
         self.landing = True
+        rospy.loginfo('%s: Action_status: %d \n', self._name, self.action_status)
         rospy.sleep(0.5)
         ######################################
         # send takeoff message               #

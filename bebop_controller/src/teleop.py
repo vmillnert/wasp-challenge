@@ -15,7 +15,9 @@ from geometry_msgs.msg import Twist
 
 # Display some text
 msg = """
-Reading from the keyboard and publishing to Bebop!   
+TO CONTROL THE DRONE, THIS WINDOW MUST BE IN FOCUS   
+
+Reading from the keyboard and publishing to drone!   
 ---------------------------  
 Moving around: 
 
@@ -119,6 +121,7 @@ if __name__ == '__main__':
             for event in pygame.event.get():
         
                 # Should quit
+                # IMPROVE THIS ONE
                 if event.type == pygame.QUIT: sys.exit()
 
                 # Key is pressed
@@ -193,10 +196,10 @@ if __name__ == '__main__':
                     twist = Twist()
                     twist.linear.x = x*speed; twist.linear.y = y*speed; twist.linear.z = z*speed;
                     twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th*turn
-                    rospy.loginfo('Velocity: \n linear: x: %.2f\n z: %.2f \n angular: \n z: %.2f',
-                                  twist.linear.x,
-                                  twist.linear.z,
-                                  twist.angular.z)
+                    # rospy.loginfo('Velocity: \n linear: x: %.2f\n z: %.2f \n angular: \n z: %.2f',
+                    #               twist.linear.x,
+                    #               twist.linear.z,
+                    #               twist.angular.z)
                     pub.publish(twist)
                 elif panic:
                     twist = Twist()
