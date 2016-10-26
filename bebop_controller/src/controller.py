@@ -175,6 +175,13 @@ class Controller(object):
                               self._my_pose.header.frame_id)
                 self.action_status = ActionStatus.FAILED            
                 pass
+            
+        # Now we now that it is in the correct frame
+        self.action_status = ActionStatus.STARTED
+        rospy.sleep(1)
+        rospy.loginfo('%s: Got a new goal\n x: %.2f\n y: %.2f', self._name, goal.point.x, goal.point.y)
+        self._goal_point = deepcopy(goal)
+
 
 
     # Limit the control signal v by _MAX_VEL
