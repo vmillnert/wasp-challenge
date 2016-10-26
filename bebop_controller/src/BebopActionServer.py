@@ -69,6 +69,7 @@ class BebopActionServer(object):
     def cb_takeoff(self, goal):
         rospy.loginfo("/BebopActionServer/cb_takeoff action_id %s", self.as_takeoff.current_goal.get_goal_id().id)
         self.controller.takeoff()
+        rospy.sleep(1)
         self.handle_feedback(self.as_takeoff)
 
 
@@ -78,6 +79,7 @@ class BebopActionServer(object):
         point_goal.header = goal.target_pose.header
         point_goal.point = goal.target_pose.pose.position
         self.controller.set_goal(point_goal)
+        rospy.sleep(1)
         self.handle_feedback(self.as_move)
 
     def mark_load_event(self, actionserver):
