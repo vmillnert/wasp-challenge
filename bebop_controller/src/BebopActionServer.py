@@ -75,20 +75,20 @@ class BebopActionServer(object):
     def cb_move_base(self, goal):
         rospy.loginfo("/BebopActionServer/cb_move_base action_id %s", self.as_move.current_goal.get_goal_id().id)
         point_goal = PointStamped()
-        point_goal.header = goal.header
+        point_goal.header = goal.target_pose.header
         point_goal.point = goal.target_pose.pose.position
         self.controller.set_goal(point_goal)
         self.handle_feedback(self.as_move)
 
     def mark_load_event(self, actionserver):
         self.controller.set_height(1.0)
-        status = self.handle_feedback(actionserver, send_result = False)
+        status, preempted = self.handle_feedback(actionserver, send_result = False)
 
         if status == ActionStatus.COMPLETED:
             self.controller.set_height(1.5)
             self.handle_feedback(actionserver, send_result = True)
         else:
-            self.send_result(actionserver, status)
+            self.send_result(actionserver, status, preempted)
 
     def handle_feedback(self, actionserver, send_result = True):
         preempted = False
@@ -105,11 +105,11 @@ class BebopActionServer(object):
 
         status = self.controller.get_action_status()
         if send_result:
-            self.send_result(actionserver, status)
+            self.send_result(actionserver, status, preempted)
 
-        return status
+        return status, preempted
 
-    def send_result(self, actionserver, status):
+    def send_result(self, actionserver, status, preempted):
         if status == ActionStatus.COMPLETED:
             actionserver.set_succeeded()
         else:
