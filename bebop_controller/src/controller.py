@@ -251,7 +251,10 @@ class Controller(object):
         # set goal-height to be current height
         self._goal_height = deepcopy(self._my_pose.pose.position.z)
         # set goal-yaw to be current yaw
-        self._goal_yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,self._my_pose.pose.orientation.y,self._my_pose.pose.orientation.z,self._my_pose.pose.orientation.w])[2]
+        self._goal_yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,
+                                                                            self._my_pose.pose.orientation.y,
+                                                                            self._my_pose.pose.orientation.z,
+                                                                            self._my_pose.pose.orientation.w])[2])
         # reset the parameters
         self.xPID.reset()
         self.yPID.reset()
@@ -342,7 +345,7 @@ class Controller(object):
                 # Automatic mode
                 self.goal_reached = (numpy.sqrt((xref-x)**2 + (yref-y)**2) < self._TOLERANCE) \
                     and (numpy.abs(zref-z) <  self._HEIGHT_TOL) \
-                    and (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) < self._YAW_TOL):
+                    and (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) < self._YAW_TOL)
 
                 # Check if we are withing our tolerance:
                 # if (numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE) \
@@ -479,7 +482,10 @@ class Controller(object):
         # set goal-height to be current height
         self._goal_height = 1.5
         # set goal-yaw to be current yaw
-        self._goal_yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,self._my_pose.pose.orientation.y,self._my_pose.pose.orientation.z,self._my_pose.pose.orientation.w])[2]
+        self._goal_yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,
+                                                                            self._my_pose.pose.orientation.y,
+                                                                            self._my_pose.pose.orientation.z,
+                                                                            self._my_pose.pose.orientation.w])[2])
         # reset the parameters
         self.xPID.reset()
         self.yPID.reset()
