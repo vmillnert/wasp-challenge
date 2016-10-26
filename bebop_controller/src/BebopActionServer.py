@@ -4,6 +4,7 @@ import roslib
 import rospy
 
 from controller import Controller, ActionStatus
+from geometry_msgs.msg import PointStamped
 
 from bebop_controller.msg import *
 from actionlib import SimpleActionServer
@@ -50,7 +51,8 @@ class BebopActionServer(object):
 
     def cb_land(self, goal):
         rospy.loginfo("/BebopActionServer/cb_land action_id %s", self.as_land.current_goal.get_goal_id().id)
-        self.as_land.set_succeeded()
+        self.controller.land()
+        self.handle_feedback(self.as_land)
 
 
     def cb_follow(self, goal):
@@ -71,7 +73,11 @@ class BebopActionServer(object):
 
     def cb_move_base(self, goal):
         rospy.loginfo("/BebopActionServer/cb_move_base action_id %s", self.as_move.current_goal.get_goal_id().id)
-        self.as_move.set_succeeded()
+        point_goal = PointStamped()
+        point_goal.header = goal.header
+        point_goal.point = goal.target_pose.pose.position
+        self.controller.setgoal(point_goal)
+        self.handle_feedback(self.as_move)
 
     def handle_feedback(self, actionserver):
         preempted = False
