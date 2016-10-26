@@ -36,8 +36,8 @@ class Controller(object):
         self._name = name
 
         # The child frame for the drone
-        self._child_frame_id = '/bebop/base_link'
-        self._parent_frame_id = '/bebop/odom'
+        self._child_frame_id = self._name + '/base_link'
+        self._parent_frame_id = self._name + '/odom'
 
         # goal height for the bebop
         self._goal_height = 1.5 # initial height goal of the bebop
@@ -47,6 +47,10 @@ class Controller(object):
         # goal PointStamped ('odom'-frame)
         # only x & y position
         self._goal_point = PointStamped() 
+
+        # Flag to know whether the goal is reached or not
+        self.goal_reached = False
+
         # self._my_point = PointStamped() # current PointStamped ('odom'-frame)
         self._my_pose = PoseStamped() # current PoseStamed of the bebop ('odom'-frame)
         self._teleop_vel = Twist() # control-signal sent by the
@@ -63,7 +67,7 @@ class Controller(object):
         # Start subscribers
 
         # start the position callback
-        rospy.Subscriber('/bebop/odom', Odometry, self.pos_callback)
+        rospy.Subscriber(self._name+'/odom', Odometry, self.pos_callback)
 
         # start the command callback from 'bebop_teleop'
         rospy.Subscriber('/bebop_teleop/command', String, self.teleop_command_callback)
@@ -83,9 +87,9 @@ class Controller(object):
 
         ###################
         # Start publishers
-        self._takeoff_pub = rospy.Publisher('/bebop/takeoff', Empty, queue_size=10)
-        self._land_pub = rospy.Publisher('/bebop/land', Empty, queue_size=10)
-        self._cmd_vel_pub = rospy.Publisher('/bebop/cmd_vel', Twist, queue_size=10)
+        self._takeoff_pub = rospy.Publisher(self._name+'/takeoff', Empty, queue_size=10)
+        self._land_pub = rospy.Publisher(self._name+'/land', Empty, queue_size=10)
+        self._cmd_vel_pub = rospy.Publisher(self._name+'/cmd_vel', Twist, queue_size=10)
 
 
         #################
@@ -103,7 +107,7 @@ class Controller(object):
         # Set goal position here for now
         goal_point = PointStamped()
         goal_point.header.stamp = rospy.Time.now()
-        goal_point.header.frame_id = 'odom'
+        goal_point.header.frame_id = self._parent_frame_id
         goal_point.point.x = 0.0 # goal in x
         goal_point.point.y = 0.0 # goal in y
         self.set_goal(goal_point)
@@ -147,10 +151,6 @@ class Controller(object):
                 pass
 
         # Now we are sure it is in the correct frame
-        self._goal_point = goal
-
-
-
 
     # Limit the control signal v by _MAX_VEL
     def limit(self, v):
@@ -227,6 +227,29 @@ class Controller(object):
         # return control.vector.x, control.vector.y, control.vector.z
         return control.pose.position.x, control.pose.position.y, control.pose.position.z, tf.transformations.euler_from_quaternion([control.pose.orientation.x,control.pose.orientation.y,control.pose.orientation.z,control.pose.orientation.w])[2]
 
+
+    # Make somebode know whether we have reached our goal or not
+    def get_action_status(self):
+        return deepcopy(self.reached_goal)
+
+    # Abort current action goal
+    # Set the goal-point to be the current position
+    def abort_action(self):
+        # Set the goal-point to be current point
+        self._goal_point = PointStamped()
+        self._goal_point.header = deepcopy(self._my_pose.header)
+        self._goal_point.point = deepcopy(self._my_pose.pose.position)
+        # set goal-height to be current height
+        self._goal_height = deepcopy(self._my_pose.pose.position.z)
+        # set goal-yaw to be current yaw
+        self._goal_yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,self._my_pose.pose.orientation.y,self._my_pose.pose.orientation.z,self._my_pose.pose.orientation.w])[2]
+        # reset the parameters
+        self.xPID.reset()
+        self.yPID.reset()
+        self.zPID.reset()
+        self.yawPID.reset()
+
+    
     # Run controller
     def run(self):
 
@@ -302,11 +325,15 @@ class Controller(object):
             elif self._control_mode == 'auto':
 
                 # Automatic mode
-
-                # Check if we are withing our tolerance:
-                if (numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE) \
+                self.goal_reached = (numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE) \
                     or (numpy.abs(zref-z) >  self._HEIGHT_TOL) \
                     or (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) > self._YAW_TOL):
+
+                # Check if we are withing our tolerance:
+                # if (numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE) \
+                #     or (numpy.abs(zref-z) >  self._HEIGHT_TOL) \
+                #     or (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) > self._YAW_TOL):
+                if self.goal_reached:
                     # Have some distance to the goal
 
                     # PID-control to make the bebop go to the desired
@@ -439,6 +466,25 @@ class Controller(object):
         # send takeoff message               #
         self._land_pub.publish(Empty())    #
         ######################################
+                                  
+    
+    # set the mode of the drone
+    # mode: 'auto' - automatic mode
+    # mode: 'manual' - manual mode
+    def set_mode(self, mode):
+        if mode == 'auto':
+            rospy.loginfo('%s: Swicthed to %s mode', self._name, mode)
+            self._control_mode = mode
+        elif mode == 'manual':
+            rospy.loginfo('%s: Swicthed to %s mode', self._name, mode)
+            self._control_mode = mode
+        
+
+    # returns the current mode
+    def get_mode(self):
+        return deepcopy(self._control_mode)
+                        
+
 
 
 if __name__ == '__main__':
