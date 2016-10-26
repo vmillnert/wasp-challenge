@@ -22,12 +22,12 @@ class BebopActionServer(object):
         self.as_follow = SimpleActionServer("BebopFollowAction", BebopFollowAction, execute_cb=self.cb_follow, auto_start=False)
 
         # Frequency for controller feedback loop
-        self.wait_rate = rospy.Rate(10)
+        self.loop_rate = rospy.Rate(10)
 
         # Setup controller
         self.controller = Controller("bebop")
         self.controller.set_mode("auto")
-        self.controller.run()
+
 
         # Finally, start action servers
         self.as_land.start()
@@ -41,7 +41,8 @@ class BebopActionServer(object):
 
 
     def spin(self):
-        rospy.spin()
+        self.controller.run()
+        # rospy.spin()
 
 
     def cb_load(self, goal):
@@ -100,7 +101,7 @@ class BebopActionServer(object):
                 preempted = True
                 self.controller.abort_action()
 
-            self.rate.sleep()
+            self.loop_rate.sleep()
 
         status = self.controller.get_action_status()
         if send_result:
