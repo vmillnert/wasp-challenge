@@ -76,7 +76,7 @@ class BebopActionServer(object):
         point_goal = PointStamped()
         point_goal.header = goal.header
         point_goal.point = goal.target_pose.pose.position
-        self.controller.setgoal(point_goal)
+        self.controller.set_goal(point_goal)
         self.handle_feedback(self.as_move)
 
     def handle_feedback(self, actionserver):
