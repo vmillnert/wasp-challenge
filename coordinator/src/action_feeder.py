@@ -46,7 +46,8 @@ class ActionFeeder:
         with open(filename, 'r') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
-                actions.append([a.strip() for a in row])
+                if len(row) > 1:
+                    actions.append([a.strip() for a in row])
             
         return actions
 
