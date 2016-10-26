@@ -73,7 +73,7 @@ class Coordinator:
         self.bebop_unload_ac = SimpleActionClient("BebopUnloadAction", BebopUnloadAction)
         self.bebop_follow_ac = SimpleActionClient("BebopFollowAction", BebopFollowAction)
 
-        self.coordinate_frame = rospy.get_param("coordinate_frame", "map")
+        self.coordinate_frame = rospy.get_param("~coordinate_frame", "map")
 
         # Interface to ROSplan
         rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
