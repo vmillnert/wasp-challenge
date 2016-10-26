@@ -46,7 +46,8 @@ class BebopActionServer(object):
 
     def cb_load(self, goal):
         rospy.loginfo("/BebopActionServer/cb_load action_id %s", self.as_load.current_goal.get_goal_id().id)
-        self.as_load.set_succeeded()
+        self.controller.set_height(1.0)
+        self.handle_feedback(self.as_load)
 
 
     def cb_land(self, goal):
@@ -62,7 +63,8 @@ class BebopActionServer(object):
 
     def cb_unload(self, goal):
         rospy.loginfo("/BebopActionServer/cb_unload action_id %s", self.as_unload.current_goal.get_goal_id().id)
-        self.as_unload.set_succeeded()
+        self.controller.set_height(1.5)
+        self.handle_feedback(self.as_unload)
 
 
     def cb_takeoff(self, goal):
