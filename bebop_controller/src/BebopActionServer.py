@@ -46,8 +46,7 @@ class BebopActionServer(object):
 
     def cb_load(self, goal):
         rospy.loginfo("/BebopActionServer/cb_load action_id %s", self.as_load.current_goal.get_goal_id().id)
-        self.controller.set_height(1.0)
-        self.handle_feedback(self.as_load)
+        mark_load_event(self.as_load)
 
 
     def cb_land(self, goal):
@@ -63,8 +62,7 @@ class BebopActionServer(object):
 
     def cb_unload(self, goal):
         rospy.loginfo("/BebopActionServer/cb_unload action_id %s", self.as_unload.current_goal.get_goal_id().id)
-        self.controller.set_height(1.5)
-        self.handle_feedback(self.as_unload)
+        mark_load_event(self.as_unload)
 
 
     def cb_takeoff(self, goal):
@@ -81,7 +79,17 @@ class BebopActionServer(object):
         self.controller.set_goal(point_goal)
         self.handle_feedback(self.as_move)
 
-    def handle_feedback(self, actionserver):
+    def mark_load_event(self, actionserver):
+        self.controller.set_height(1.0)
+        status = self.handle_feedback(actionserver, send_result = False)
+
+        if status == ActionStatus.COMPLETED:
+            self.controller.set_height(1.5)
+            self.handle_feedback(actionserver, send_result = True)
+        else:
+            self.send_result(actionserver, status)
+
+    def handle_feedback(self, actionserver, send_result = True):
         preempted = False
         while self.controller.get_action_status() <= ActionStatus.STARTED:
             if rospy.is_shutdown():
@@ -94,14 +102,20 @@ class BebopActionServer(object):
 
             self.rate.sleep()
 
-        if self.controller.get_action_status() == ActionStatus.COMPLETED:
+        status = self.controller.get_action_status()
+        if send_result:
+            self.send_result(actionserver, status)
+
+        return status
+
+    def send_result(self, actionserver, status):
+        if status == ActionStatus.COMPLETED:
             actionserver.set_succeeded()
         else:
             if preempted:
                 actionserver.set_preempted()
             else:
                 actionserver.set_aborted()
-
 
 if __name__ == '__main__':
     try:
