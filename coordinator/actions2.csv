@@ -1,7 +1,4 @@
 takeoff, drone
-land, drone
-goto, turtle, b
-takeoff, drone
 goto, drone, b
 goto, drone, h
 land, drone
