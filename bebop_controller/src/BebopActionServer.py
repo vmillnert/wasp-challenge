@@ -3,7 +3,7 @@
 import roslib
 import rospy
 
-import controller
+from controller import Controller, ActionStatus
 
 from bebop_controller.msg import *
 from actionlib import SimpleActionServer
@@ -25,11 +25,15 @@ class BebopActionServer(object):
         self.as_takeoff.start()
         self.as_unload.start()
         self.as_follow.start()
+        self.wait_rate = rospy.Rate(10)
+
+        self.controller = Controller("bebop")
 
         rospy.loginfo("%s running", rospy.get_name())
 
 
     def spin(self):
+        self.controller.run()
         rospy.spin()
 
 
@@ -55,12 +59,26 @@ class BebopActionServer(object):
 
     def cb_takeoff(self, goal):
         rospy.loginfo("/BebopActionServer/cb_takeoff action_id %s", self.as_takeoff.current_goal.get_goal_id().id)
+        self.controller.takeoff()
+        self.wait_for_result(self.as_takeoff)
         self.as_takeoff.set_succeeded()
 
 
     def cb_move_base(self, goal):
         rospy.loginfo("/BebopActionServer/cb_move_base action_id %s", self.as_move.current_goal.get_goal_id().id)
         self.as_move.set_succeeded()
+
+    def wait_for_result(self, actionserver):
+        while self.controller.get_action_status() <= ActionStatus.STARTED:
+            if rospy.is_shutdown():
+                self.controller.abort_action()
+                sys.exit()
+
+            elif actionserver.is_preempt_requested():
+                self.controller.abort_action()
+
+            self.rate.sleep()
+        return ActionStatus.COMPLETED == self.controller.get_action_status()
 
 
 if __name__ == '__main__':

@@ -23,6 +23,12 @@ from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Empty
 from std_msgs.msg import String
 
+class ActionStatus:
+    IDLE = 0
+    STARTED = 1
+    FAILED = 2
+    COMPLETED = 3
+
 class Controller(object):
 
     _MAX_VEL = 0.4 # Maximum velocity for the drone in any one
