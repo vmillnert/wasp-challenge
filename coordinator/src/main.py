@@ -73,6 +73,8 @@ class Coordinator:
         self.bebop_unload_ac = SimpleActionClient("BebopUnloadAction", BebopUnloadAction)
         self.bebop_follow_ac = SimpleActionClient("BebopFollowAction", BebopFollowAction)
 
+        self.coordinate_frame = rospy.get_param("coordinate_frame", "map")
+
         # Interface to ROSplan
         rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
 
@@ -208,7 +210,7 @@ class Coordinator:
         if not ac.wait_for_server(timeout=rospy.Duration(10)):
             rospy.loginfo("server timeout")
 
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = self.coordinate_frame
         goal.target_pose.header.stamp = rospy.Time.now()
 
         goal.target_pose.pose.position.x = self.waypoints[wp][0]
