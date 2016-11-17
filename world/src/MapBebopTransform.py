@@ -14,8 +14,8 @@ def tagCallback(data):
     if detection.id == 0:
       tagref = TagRef()
       tagref.global_frame = "map"
-      tagref.tag_frame = "/turtle/tag"
-      tagref.target_frame = "/drone/odom"
+      tagref.tag_frame = "plate_top_link"
+      tagref.target_frame = "bebop/odom"
       tagref.pose = detection.pose
       pub.publish(tagref)
 

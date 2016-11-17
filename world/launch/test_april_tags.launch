@@ -9,6 +9,7 @@
 
     <!-- Optional: Subscribe to the compressed stream-->
     <param name="image_transport" type="str" value="compressed" />
+    <param name="sensor_frame_id" type="str" value="bebop/camera_optical" />
 
     <!-- Select the tag family: 16h5, 25h7, 25h9, 36h9, or 36h11(default) -->
     <param name="tag_family" type="str" value="36h11" />
