@@ -36,15 +36,20 @@ from world.msg import TagRef
 def locatedCallback(tagref):
   global listener   # Created in listener()
   global transforms  # A dictionary of transforms to publish
-
+  global observation_history # A dictionary of last observation for every landmark to publish
+  global n_samples # Number of samples for median filter
   try:
-    listener.waitForTransform(tagref.global_frame, tagref.tag_frame, tagref.pose.header.stamp, rospy.Duration(0.5))
-    (trans_gt, rot_gt) = listener.lookupTransform(tagref.global_frame, tagref.tag_frame, tagref.pose.header.stamp)
+    rospy.loginfo('Request time: '+ str(tagref.pose.header.stamp))
+    listener.waitForTransform(tagref.global_frame, tagref.tag_frame,
+                              tagref.pose.header.stamp, rospy.Duration(2))
+    (trans_gt, rot_gt) = listener.lookupTransform(tagref.global_frame,
+     tagref.tag_frame, tagref.pose.header.stamp)
     mat_map = tf.transformations.concatenate_matrices(
         tf.transformations.translation_matrix(trans_gt),
         tf.transformations.quaternion_matrix(rot_gt))
 
-    listener.waitForTransform(tagref.target_frame, tagref.pose.header.frame_id, tagref.pose.header.stamp, rospy.Duration(0.5))
+    listener.waitForTransform(tagref.target_frame, tagref.pose.header.frame_id,
+     tagref.pose.header.stamp, rospy.Duration(0.5))
     pstamped = listener.transformPose(tagref.target_frame, tagref.pose)
 
     mat_odom = tf.transformations.concatenate_matrices(
@@ -66,7 +71,33 @@ def locatedCallback(tagref):
    
     lock.acquire() 
     key=tagref.global_frame+","+tagref.tag_frame+","+tagref.target_frame
-    transforms[key] = (tagref.global_frame, tagref.target_frame, trans, rot)
+    if not key in observation_history:
+        observation_history[key] = []
+    assert(len(observation_history[key]) <= n_samples)
+    if len(observation_history[key]) == n_samples:
+        observation_history[key].pop(0)
+    observation_history[key].append((trans,rot))
+
+    trans_list = map(lambda x : x[0] , observation_history[key])
+    rot_list = map(lambda x : x[1] , observation_history[key])
+
+    # Compute the 'distance' between the translations
+    trans_0 =trans_list[0]
+    trans_norm = map(lambda x: (numpy.linalg.norm(trans_0-x), x) , trans_list)
+    
+    # compute the 'norms' (i.e. distance) between the quaternions
+    # the inner product between two quaternions q1 and q2 is cos(theta/2)
+    # where theta is the smalles arc between them. Hence the
+    # 'distance' between the two quaternions is defined as
+    # 2*acos(dot(q1,q2))
+    rot_0 = rot_list[0]
+    rot_norm = map(lambda x: (2*numpy.arccos(numpy.dot(rot_0, x)), x), rot_list)
+    
+    trans_norm = sorted(trans_norm, key=lambda x: x[0])
+    rot_norm = sorted(rot_norm, key=lambda x: x[0])
+    i = int(len(trans_norm)/2)
+    
+    transforms[key] = (tagref.global_frame, tagref.target_frame, trans_norm[i][1], rot_norm[i][1], tagref.pose.header.stamp)
     lock.release()
 
   except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
@@ -74,9 +105,10 @@ def locatedCallback(tagref):
     print(e)
 
 # Publishes the transform
-def sendTransform(fromFrame, toFrame, trans,rot):
+def sendTransform(fromFrame, toFrame, trans,rot, time):
   global broadcaster
-  broadcaster.sendTransform(trans, rot, rospy.Time.now(), toFrame, fromFrame)
+  #broadcaster.sendTransform(trans, rot, rospy.Time.now(), toFrame, fromFrame)
+  broadcaster.sendTransform(trans, rot, time, toFrame, fromFrame)
 
 # Periodically broadcasts the transform
 def broadcastThread():
@@ -85,7 +117,8 @@ def broadcastThread():
   while not rospy.is_shutdown():
     lock.acquire()
     for k,v in transforms.iteritems():
-      sendTransform(v[0], v[1], v[2], v[3])
+      rospy.loginfo
+      sendTransform(v[0], v[1], v[2], v[3], v[4])
     lock.release()
     rate.sleep()
 
@@ -95,10 +128,13 @@ def startMapTransform():
   global broadcaster    # Used by sendTransform
   global transforms     # Published periodically
   global lock           # Synchronize locatedCallback and broadcast thread
-
+  global observation_history # A dictionary of last observation for every landmark to publish
+  global n_samples # Number of samples for median filter
   lock = Lock()
+  n_samples = 7
   transforms = {}
   broadcaster = tf.TransformBroadcaster()
+  observation_history = {}
   rospy.init_node('tagref', anonymous=False)
   listener = tf.TransformListener()           # Note: init_node must happen first
   Thread(target=broadcastThread).start()

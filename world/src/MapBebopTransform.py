@@ -13,10 +13,11 @@ def tagCallback(data):
   for detection in data.detections:
     if detection.id == 0:
       tagref = TagRef()
-      tagref.global_frame = "map"
-      tagref.tag_frame = "plate_top_link"
-      tagref.target_frame = "bebop/odom"
-      tagref.pose = detection.pose
+      tagref.global_frame = "map" #
+      tagref.tag_frame = "plate_top_link" #Ground truth for the tag
+      tagref.target_frame = "bebop/odom" #
+      tagref.pose = detection.pose #Detected landmark pose from camera on drone
+      rospy.loginfo('pose-time: ' + str(detection.pose.header.stamp))
       pub.publish(tagref)
 
 def listener():
