@@ -1,8 +1,8 @@
 takeoff, drone
 follow, drone
-goto, drone, wp0
+goto, drone, a
 load, drone
-goto, drone, wp1
+goto, drone, b
 unload, drone
-goto, drone, wp2
+goto, drone, c
 land, drone
