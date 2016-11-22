@@ -76,3 +76,8 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+# Frames pdf
+world/src/2016-10-25-11-26-31.bag
+world/src/frames.gv
+world/src/frames.pdf

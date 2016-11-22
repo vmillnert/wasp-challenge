@@ -1,4 +1,5 @@
 <launch>
+  <param name="tf_prefix" value="hej"/>
 	<node
 	  name="bebop_controller" pkg="bebop_controller" type="controller.py"
 	  output="screen"

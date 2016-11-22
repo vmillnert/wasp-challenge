@@ -1,0 +1,7 @@
+<!---
+  Don't forget to calibrate your camera!
+-->
+<launch>
+  <include file="$(find world)/launch/start_april_tags.launch"/>
+  <include file="$(find world)/launch/start_transform.launch"/>
+</launch>
