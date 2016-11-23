@@ -14,6 +14,9 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   move_base_msgs
   bebop_controller
+  rosplan_dispatch_msgs
+  rosplan_knowledge_msgs
+  diagnostic_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -114,7 +117,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES coordinator
-   CATKIN_DEPENDS actionlib_msgs actionlib roscpp rospy std_msgs message_runtime bebop_controller
+   CATKIN_DEPENDS actionlib_msgs actionlib roscpp rospy std_msgs message_runtime bebop_controller rosplan_dispatch_msgs rosplan_knowledge_msgs diagnostic_msgs
 #  DEPENDS system_lib
 )
 

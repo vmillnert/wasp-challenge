@@ -10,6 +10,35 @@ from bebop_controller.msg import *
 from actionlib import SimpleActionServer
 
 
+class TestController:
+    def __init__(self):
+        self.status = ActionStatus.IDLE
+
+        self.takeoff = lambda : self.fake_action("TakeOff")
+        self.land = lambda : self.fake_action("Land")
+        self.set_goal = lambda g: self.fake_action("Goto")
+        self.set_height = lambda h: self.fake_action("Set height")
+
+    def init_str(self, _str):
+        return "\033[94m Initiate %s \033[0m" % _str
+
+    def end_str(self, _str):
+        return "\033[92m %s finished! \033[0m" % _str
+
+    def fake_action(self, action_name):
+        self.status = ActionStatus.STARTED
+        rospy.loginfo(self.init_str(action_name))
+        rospy.sleep(0.5)
+        rospy.loginfo(self.end_str(action_name))
+        self.status = ActionStatus.COMPLETED
+
+    def get_action_status(self):
+        return self.status
+
+    def run(self):
+        pass
+
+
 class BebopActionServer(object):
 
     def __init__(self):
@@ -25,8 +54,11 @@ class BebopActionServer(object):
         self.loop_rate = rospy.Rate(10)
 
         # Setup controller
-        self.controller = Controller("bebop")
-        self.controller.set_mode("auto")
+        if rospy.get_param('~test_mode', False):
+            self.controller = TestController()
+        else:
+            self.controller = Controller("bebop")
+            self.controller.set_mode("auto")
 
 
         # Finally, start action servers
@@ -47,7 +79,7 @@ class BebopActionServer(object):
 
     def cb_load(self, goal):
         rospy.loginfo("/BebopActionServer/cb_load action_id %s", self.as_load.current_goal.get_goal_id().id)
-        mark_load_event(self.as_load)
+        self.mark_load_event(self.as_load)
 
 
     def cb_land(self, goal):
@@ -63,7 +95,7 @@ class BebopActionServer(object):
 
     def cb_unload(self, goal):
         rospy.loginfo("/BebopActionServer/cb_unload action_id %s", self.as_unload.current_goal.get_goal_id().id)
-        mark_load_event(self.as_unload)
+        self.mark_load_event(self.as_unload)
 
 
     def cb_takeoff(self, goal):

@@ -29,6 +29,9 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>move_base_msgs</build_depend>
   <build_depend>bebop_controller</build_depend>
+  <build_depend>rosplan_dispatch_msgs</build_depend>
+  <build_depend>rosplan_knowledge_msgs</build_depend>
+  <build_depend>diagnostic_msgs</build_depend>
   
   <run_depend>actionlib</run_depend>
   <run_depend>actionlib_msgs</run_depend>
@@ -38,6 +41,10 @@
   <run_depend>move_base_msgs</run_depend>
   <run_depend>bebop_controller</run_depend>
   <run_depend>message_runtime</run_depend>
+  <run_depend>rosplan_dispatch_msgs</run_depend>
+  <run_depend>rosplan_knowledge_msgs</run_depend>
+  <run_depend>diagnostic_msgs</run_depend>
+  
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
