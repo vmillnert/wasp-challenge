@@ -2,9 +2,14 @@
 WASP Challenge for the Autonomous Systems Course Fall 2016.
 
 ## Group 1 - Lund University
-* Christian Nelson
-* Victor Millnert
 * David Gillsjö
+* Victor Millnert
+* Christian Nelson
+* Hamed Sadeghi
+* Per Skarin
+* Alfred Åkesson
+
+
 
 ## Dependencies
 
