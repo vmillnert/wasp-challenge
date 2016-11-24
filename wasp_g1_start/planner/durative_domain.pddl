@@ -29,10 +29,10 @@
   :duration (= ?duration (move-duration ?from ?to))
   :condition (and (over all (empty ?to))
                   (at start (at ?agent ?from)))
-  :effect (and (at end (not (at ?agent ?from)))
+  :effect (and (at start (not (at ?agent ?from)))
                (at end (at ?agent ?to))
-               (at end (empty ?from))
-               (at start (not (empty ?to))))
+               (at start (empty ?from))
+               (at end (not (empty ?to))))
   )
 
 ;only drone can do pick-up, from a known waypoint

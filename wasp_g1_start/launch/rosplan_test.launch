@@ -39,7 +39,7 @@
 		<param name="strl_file_path" value="$(find wasp_g1_start)/planner/plan.strl" />
 
 		<!-- to run the planner -->
-		<param name="planner_command" value="timeout 10 $(find rosplan_config)/planner/bin/popf -n DOMAIN PROBLEM" />
+		<param name="planner_command" value="timeout 10 $(find rosplan_config)/planner/bin/yahsp3 -o DOMAIN -f PROBLEM -N" />
 		<param name="generate_default_problem" value="true" />
 		<param name="max_dispatch_attempts" value="2" />
 	</node>
