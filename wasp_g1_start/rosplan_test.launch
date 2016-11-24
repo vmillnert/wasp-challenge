@@ -20,7 +20,7 @@
 	<param name="/rosplan/planner_path" value="$(find rosplan_config)/planner/bin/" />
 
 	<!-- domain file -->
-	<param name="/rosplan/domain_path" value="$(find wasp_g1_start)/planner/carrier_domain.pddl" />
+	<param name="/rosplan/domain_path" value="$(find wasp_g1_start)/planner/durative_domain.pddl" />
 
 	<!-- knowledge base -->
 	<node name="rosplan_knowledge_base" pkg="rosplan_knowledge_base" type="knowledgeBase" respawn="false" output="screen" />
