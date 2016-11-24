@@ -44,29 +44,29 @@ class plannerInterface:
 
         self.clear_knowledge()
 
-        # objects = {'waypoint': ['depo', 'wp0', 'wp1'],
-        #             'airwaypoint': ['a_depo', 'a_wp0', 'a_wp1'],
-        #             'drone': ['drone0', 'drone1'],
-        #             'turtlebot': ['bot0', 'bot1'],
-        #             'person': ['person0', 'person1'],
-        #             'box': ['box0', 'box1', 'box2']}
-
-        # at_dict = {'depo': objects['box'],
-        #            'wp0': ['person0'],
-        #            'wp1': ['person1'],
-        #            'a_wp0': ['drone0'],
-        #            'a_wp1': ['drone1']}
-
-        objects = {'waypoint': ['depo', 'wp0'],
-                    'airwaypoint': ['a_depo', 'a_wp0'],
-                    'drone': ['drone0'],
-                    'turtlebot': [],
-                    'person': ['person0'],
-                    'box': ['box0']}
+        objects = {'waypoint': ['depo', 'wp0', 'wp1','wp2','wp3'],
+                    'drone': ['drone0', 'drone1'],
+                    'turtlebot': ['bot0', 'bot1'],
+                    'person': ['person0', 'person1'],
+                    'box': ['box0', 'box1', 'box2']}
+        objects['airwaypoint'] = ["a_%s" % wp for wp in objects['waypoint']]
 
         at_dict = {'depo': objects['box'],
                    'wp0': ['person0'],
-                   'a_wp0': ['drone0']}
+                   'wp1': ['person1'],
+                   'a_wp2': ['drone0'],
+                   'a_wp3': ['drone1']}
+
+        # objects = {'waypoint': ['depo', 'wp0'],
+        #             'airwaypoint': ['a_depo', 'a_wp0'],
+        #             'drone': ['drone0'],
+        #             'turtlebot': [],
+        #             'person': ['person0'],
+        #             'box': ['box0']}
+
+        # at_dict = {'depo': objects['box'],
+        #            'wp0': ['person0'],
+        #            'a_wp0': ['drone0']}
 
         empty_waypoints = []
         valid_occupants =  objects['drone'] + objects['turtlebot']
@@ -81,24 +81,23 @@ class plannerInterface:
 
        # Set up waypoint distances
         d = 20
-        d_matrix = [[1, d, d],[d, 1, d],[d, d, 1]]
         
-        for i, wp1 in enumerate(objects['waypoint']):
-            for j, wp2 in enumerate(objects['waypoint']):
+        for wp1 in objects['waypoint']:
+            for wp2 in objects['waypoint']:
                 kitem = KnowledgeItem()
                 kitem.knowledge_type = KnowledgeItem.FUNCTION
                 kitem.attribute_name = "move-duration"
                 kitem.values = [KeyValue('from', wp1), KeyValue('to', wp2)]
-                kitem.function_value = d_matrix[i][j]
+                kitem.function_value = 1 if wp1 == wp2 else d
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
-        for i, wp1 in enumerate(objects['airwaypoint']):
-            for j, wp2 in enumerate(objects['airwaypoint']):
+        for wp1 in objects['airwaypoint']:
+            for wp2 in objects['airwaypoint']:
                 kitem = KnowledgeItem()
                 kitem.knowledge_type = KnowledgeItem.FUNCTION
                 kitem.attribute_name = "move-duration"
                 kitem.values = [KeyValue('from', wp1), KeyValue('to', wp2)]
-                kitem.function_value = d_matrix[i][j]
+                kitem.function_value = 1 if wp1 == wp2 else d
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Set empty for agents and waypoints
