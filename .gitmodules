@@ -16,4 +16,4 @@
 	url = https://github.com/clearpathrobotics/occupancy_grid_utils
 [submodule "rosplan"]
 	path = rosplan
-	url = https://github.com/KCL-Planning/rosplan
+	url = https://github.com/DavidGillsjo/ROSPlan.git
