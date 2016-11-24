@@ -211,10 +211,7 @@ class Coordinator:
             rospy.loginfo("server timeout")
 
         goal.target_pose.header.frame_id = self.coordinate_frame
-        if obj == "drone":
-            goal.target_pose.header.frame_id = "bebop/odom"
         goal.target_pose.header.stamp = rospy.Time.now()
-
         goal.target_pose.pose.position.x = self.waypoints[wp][0]
         goal.target_pose.pose.position.y = self.waypoints[wp][1]
         goal.target_pose.pose.orientation.w = 1
