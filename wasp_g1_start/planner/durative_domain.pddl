@@ -75,3 +75,4 @@
                (at end (empty ?drone))
                (at end (handled ?person)))
   )
+)
