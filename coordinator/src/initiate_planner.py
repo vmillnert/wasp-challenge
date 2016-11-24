@@ -44,41 +44,72 @@ class plannerInterface:
 
         self.clear_knowledge()
 
-        objects = {'LOC': ['depo', 'wp0', 'wp1'],
-                    'DRONE': ['drone0'],
-                    'PERSON': ['person0', 'person1'],
-                    'BOX': ['box0', 'box1', 'box2'],
-                    'BTYPE': ['med', 'food', 'water']}
+        # objects = {'waypoint': ['depo', 'wp0', 'wp1'],
+        #             'airwaypoint': ['a_depo', 'a_wp0', 'a_wp1'],
+        #             'drone': ['drone0', 'drone1'],
+        #             'turtlebot': ['bot0', 'bot1'],
+        #             'person': ['person0', 'person1'],
+        #             'box': ['box0', 'box1', 'box2']}
 
-        at_dict = {'depo': objects['BOX'] + objects['DRONE'],
+        # at_dict = {'depo': objects['box'],
+        #            'wp0': ['person0'],
+        #            'wp1': ['person1'],
+        #            'a_wp0': ['drone0'],
+        #            'a_wp1': ['drone1']}
+
+        objects = {'waypoint': ['depo', 'wp0'],
+                    'airwaypoint': ['a_depo', 'a_wp0'],
+                    'drone': ['drone0'],
+                    'turtlebot': [],
+                    'person': ['person0'],
+                    'box': ['box0']}
+
+        at_dict = {'depo': objects['box'],
                    'wp0': ['person0'],
-                   'wp1': ['person1']}
+                   'a_wp0': ['drone0']}
 
-        goal_dict = {'person0': ['med', 'food'],
-                     'person1': ['med']}
+        empty_waypoints = []
+        valid_occupants =  objects['drone'] + objects['turtlebot']
+        for loc in objects['waypoint'] + objects['airwaypoint']:
+            valid = False
+            if loc in at_dict:
+                for o in at_dict[loc]:
+                    valid = True if (o in valid_occupants) else valid
+            
+            if not valid:
+                empty_waypoints.append(loc)
 
-        box_dict = {'med': ['box0', 'box1'],
-                    'food': ['box2']}
+       # Set up waypoint distances
         d = 20
-        d_matrix = [[0, d, d],[d, 0, d],[d, d, 0]]
-
-        for i, wp1 in enumerate(objects['LOC']):
-            for j, wp2 in enumerate(objects['LOC']):
-
+        d_matrix = [[1, d, d],[d, 1, d],[d, d, 1]]
+        
+        for i, wp1 in enumerate(objects['waypoint']):
+            for j, wp2 in enumerate(objects['waypoint']):
                 kitem = KnowledgeItem()
                 kitem.knowledge_type = KnowledgeItem.FUNCTION
-                kitem.attribute_name = "fly-cost"
+                kitem.attribute_name = "move-duration"
                 kitem.values = [KeyValue('from', wp1), KeyValue('to', wp2)]
                 kitem.function_value = d_matrix[i][j]
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
-        for drone in objects['DRONE']:
+        for i, wp1 in enumerate(objects['airwaypoint']):
+            for j, wp2 in enumerate(objects['airwaypoint']):
+                kitem = KnowledgeItem()
+                kitem.knowledge_type = KnowledgeItem.FUNCTION
+                kitem.attribute_name = "move-duration"
+                kitem.values = [KeyValue('from', wp1), KeyValue('to', wp2)]
+                kitem.function_value = d_matrix[i][j]
+                self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
+
+        # Set empty for agents and waypoints
+        for obj in objects['drone'] + objects['turtlebot'] + empty_waypoints:
             kitem = KnowledgeItem()
             kitem.knowledge_type = KnowledgeItem.FACT
-            kitem.values = [KeyValue('d', drone)]
+            kitem.values = [KeyValue('aw_object', obj)]
             kitem.attribute_name = 'empty'
             self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
+        # Add agents
         for key, items in objects.iteritems():
             for item in items:
                 kitem = KnowledgeItem()
@@ -87,30 +118,30 @@ class plannerInterface:
                 kitem.instance_name = item
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
+        # Add locations for agents and boxes
         for key, values in at_dict.iteritems():
             for value in values:
                 kitem = KnowledgeItem()
                 kitem.knowledge_type = KnowledgeItem.FACT
-                kitem.values = [KeyValue('o', value), KeyValue('l', key)]
+                kitem.values = [KeyValue('object', value), KeyValue('waypoint', key)]
                 kitem.attribute_name = 'at'
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
-        for btype, boxes in box_dict.iteritems():
-            for box in boxes:
-                kitem = KnowledgeItem()
-                kitem.knowledge_type = KnowledgeItem.FACT
-                kitem.values = [KeyValue('b', box), KeyValue('t', btype)]
-                kitem.attribute_name = 'contains'
-                self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
+        # Set relation between air and ground waypoints
+        for air, ground in zip(objects['airwaypoint'], objects['waypoint']):
+            kitem = KnowledgeItem()
+            kitem.knowledge_type = KnowledgeItem.FACT
+            kitem.values = [KeyValue('airwaypoint', air), KeyValue('waypoint', ground)]
+            kitem.attribute_name = 'over'
+            self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
-        for key, items in goal_dict.iteritems():
-            for item in items:
-                kitem = KnowledgeItem()
-                kitem.knowledge_type = KnowledgeItem.FACT
-                kitem.values = [KeyValue('p', key), KeyValue('t', item)]
-                kitem.attribute_name = 'has'
-                self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_GOAL, knowledge=kitem)
-
+        # Set relation between air and ground waypoints
+        for person in objects['person']:
+            kitem = KnowledgeItem()
+            kitem.knowledge_type = KnowledgeItem.FACT
+            kitem.values = [KeyValue('person', person)]
+            kitem.attribute_name = 'handled'
+            self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_GOAL, knowledge=kitem)
 
     def start(self):
         self.cmd_pub.publish(StringMsg("plan"))
