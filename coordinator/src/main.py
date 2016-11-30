@@ -40,7 +40,7 @@ class Action:
         self.obj = None
         self.wp = None
         for p in self.parameters:
-            if p.key == "agent":
+            if p.key == "agent" or p.key == "drone":
                 self.obj = p.value
             if p.key == "to":
                 self.wp = p.value
@@ -119,9 +119,9 @@ class Coordinator:
         feedback_msg = ActionFeedback()
         feedback_msg.action_id = action_id
         if (state == GoalStatus.SUCCEEDED):
-        	feedback_msg.status = "action_achieved"
+        	feedback_msg.status = "action achieved"
         else:
-        	feedback_msg.status = "action_failed"
+        	feedback_msg.status = "action failed"
 
         self.feedback_pub.publish(feedback_msg)
 
@@ -130,7 +130,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_takeoff for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_takeoff_ac
 
@@ -144,7 +144,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_land for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_land_ac
 
@@ -158,7 +158,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_load for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_load_ac
 
@@ -172,7 +172,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_unload for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_unload_ac
 
@@ -186,7 +186,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_follow for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_follow_ac
 
@@ -223,7 +223,7 @@ class Coordinator:
         goal.target_pose.pose.orientation.w = 1
 
         # Notify action dispatcher of status
-        feedback_msg = ActionFeedback(action_id = action_id, status = "action_enabled")
+        feedback_msg = ActionFeedback(action_id = action_id, status = "action enabled")
         self.feedback_pub.publish(feedback_msg)
 
         ac.send_goal(goal)

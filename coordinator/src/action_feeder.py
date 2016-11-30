@@ -55,11 +55,11 @@ class ActionFeeder:
     def action_feedback_callback(self, msg):
         rospy.loginfo('action_feeder:Receiving feedback on action id: %i, status: %s', msg.action_id, msg.status)
         assert(self.current_msg.action_id == msg.action_id)
-        if msg.status == "action_enabled":
+        if msg.status == "action enabled":
             self.status = ActionStatus.RECEIVED
-        elif msg.status == "action_failed":
+        elif msg.status == "action failed":
             self.status = ActionStatus.FAILED
-        elif msg.status == "action_achieved":
+        elif msg.status == "action achieved":
             self.status = ActionStatus.COMPLETED
 
 
