@@ -153,7 +153,7 @@ class PlannerInterface:
 
 
 if __name__ == '__main__':
-    p_interface = plannerInterface()
+    p_interface = PlannerInterface()
     p_interface.setup_problem()
     p_interface.start()
     p_interface.spin()
