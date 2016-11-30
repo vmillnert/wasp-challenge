@@ -49,6 +49,7 @@ class plannerInterface:
                     'turtlebot': ['bot0', 'bot1'],
                     'person': ['person0', 'person1'],
                     'box': ['box0', 'box1', 'box2']}
+
         objects['airwaypoint'] = ["a_%s" % wp for wp in objects['waypoint']]
 
         at_dict = {'depo': objects['box'],
@@ -56,6 +57,10 @@ class plannerInterface:
                    'wp1': ['person1'],
                    'a_wp2': ['drone0'],
                    'a_wp3': ['drone1']}
+
+        # Even if the above lines will move to a config file, the following should hold as long as it is read as an object dictionary
+        rospy.set_param('/available_drones', objects['drone'])
+        rospy.set_param('/available_turtlebots', objects['turtlebot'])
 
         # objects = {'waypoint': ['depo', 'wp0'],
         #             'airwaypoint': ['a_depo', 'a_wp0'],
@@ -75,13 +80,13 @@ class plannerInterface:
             if loc in at_dict:
                 for o in at_dict[loc]:
                     valid = True if (o in valid_occupants) else valid
-            
+
             if not valid:
                 empty_waypoints.append(loc)
 
        # Set up waypoint distances
         d = 20
-        
+
         for wp1 in objects['waypoint']:
             for wp2 in objects['waypoint']:
                 kitem = KnowledgeItem()
