@@ -23,6 +23,8 @@ For the ROSPlan Package depends on the following package to fully function.
 
 `sudo apt-get install flex ros-indigo-mongodb-store ros-indigo-tf2-bullet freeglut3-dev`
 
+It is important to don't have a mongodb service running. Ubuntu has this as default. If `roslaunch wasp_g1_start rosplan_test.launch` fails, then it is most likely due too a running instance of mongodb. Then run `sudo service mongodb stop`.
+
 ---
 
 ## Directory Contents
