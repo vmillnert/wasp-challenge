@@ -1,6 +1,6 @@
 (define (domain emergency)
 
-(:requirements :strips :typing :equality :durative-actions :fluents)
+(:requirements :strips :typing :durative-actions :fluents)
 
 (:types 
   waypoint - object
@@ -41,7 +41,7 @@
   :duration (= ?duration 1)
   :condition (and (over all (over ?air ?ground))
                   (over all (at ?drone ?air))
-                  (over all (at ?box ?ground))
+                  (at start (at ?box ?ground))
                   (at start (empty ?drone)))
   :effect (and (at start (not (at ?box ?ground)))
                (at end (carrying ?drone ?box))
