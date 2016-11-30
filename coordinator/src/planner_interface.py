@@ -17,7 +17,7 @@ class KnowledgeUpdateServiceEnum:
     REMOVE_GOAL = 3
 
 
-class plannerInterface:
+class PlannerInterface:
     def __init__(self):
         # Initiate node
         rospy.init_node('planner_interface', anonymous=True, log_level=rospy.INFO)
@@ -35,8 +35,6 @@ class plannerInterface:
 
         rospy.wait_for_service("/kcl_rosplan/clear_knowledge_base")
         self.clear_knowledge = rospy.ServiceProxy("/kcl_rosplan/clear_knowledge_base", Empty)
-
-        self.setup_problem()
 
 
     def setup_problem(self):
@@ -156,5 +154,6 @@ class plannerInterface:
 
 if __name__ == '__main__':
     p_interface = plannerInterface()
+    p_interface.setup_problem()
     p_interface.start()
     p_interface.spin()

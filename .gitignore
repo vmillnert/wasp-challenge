@@ -1,3 +1,9 @@
+# ROSPLAN
+plan.pddl
+plan.strl
+problem.pddl
+plan_*
+
 # Compiled Object files
 *.slo
 *.lo
