@@ -40,9 +40,9 @@ class Action:
         self.obj = None
         self.wp = None
         for p in self.parameters:
-            if p.key == "obj":
+            if p.key == "agent":
                 self.obj = p.value
-            if p.key == "wp":
+            if p.key == "to":
                 self.wp = p.value
 
         if self.obj == None:
@@ -93,6 +93,7 @@ class Coordinator:
         action = Action(msg)
         rospy.loginfo('/coordinator/action_dispatch_callback obj "%s", action "%s"', action.obj, action.name)
 
+        # Shared actions between action feeder and planner
         if (msg.name == 'goto'):
             self.action_goto(action)
         elif (msg.name == 'takeoff'):
@@ -105,6 +106,11 @@ class Coordinator:
             self.action_unload(action)
         elif (msg.name == 'follow'):
             self.action_follow(action)
+        #Actions only defined by planner
+        elif (msg.name == 'pick-up'):
+            self.action_load(action)
+        elif (msg.name == 'hand-over'):
+            self.action_load(action)
         else:
             rospy.loginfo("No action called %s for obj %s", msg.name, msg.obj)
 
@@ -198,10 +204,10 @@ class Coordinator:
         wp = action.wp
 
         ac = None
-        if obj == "drone":
+        if obj in rospy.get_param('/available_drones'):
             goal = BebopMoveBaseGoal()
             ac = self.bebop_move_ac
-        elif obj == "turtle":
+        elif obj == rospy.get_param('/available_turtlebots'):
             goal = MoveBaseGoal()
             ac = self.turtle_move_ac
         if ac == None:

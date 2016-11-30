@@ -81,9 +81,9 @@ class ActionFeeder:
         for i, action in enumerate(self.actions):
             self.current_msg.action_id = i
             self.current_msg.name = action[0]
-            self.current_msg.parameters = [KeyValue('obj',action[1])]
+            self.current_msg.parameters = [KeyValue('agent',action[1])]
             if action[0] == ActionName.goto:
-                self.current_msg.parameters.append(KeyValue('wp',action[2]))
+                self.current_msg.parameters.append(KeyValue('to',action[2]))
             self.dispatch()
 
 

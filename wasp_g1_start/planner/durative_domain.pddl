@@ -24,7 +24,7 @@
 
 (:functions (move-duration ?from ?to - waypoint) - number)
 
-(:durative-action move
+(:durative-action goto
   :parameters (?agent - agent ?from ?to - waypoint)
   :duration (= ?duration (move-duration ?from ?to))
   :condition (and (over all (empty ?to))
@@ -62,7 +62,7 @@
                (at start (not (empty ?turtlebot))))
   )
 
-(:durative-action deliver
+(:durative-action unload
   :parameters (?drone - drone ?box - box ?air - airwaypoint ?ground - waypoint ?person - person)
   :duration (= ?duration 1)
   :condition (and (over all (over ?air ?ground))
