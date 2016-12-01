@@ -54,7 +54,8 @@ class BebopActionServer(object):
         self.loop_rate = rospy.Rate(10)
 
         # Setup controller
-        if rospy.get_param('~test_mode', False):
+        if rospy.get_param('test_mode', False):
+            rospy.loginfo("%s running", "testmode")
             self.controller = TestController()
         else:
             self.controller = Controller("bebop")
@@ -101,7 +102,7 @@ class BebopActionServer(object):
     def cb_takeoff(self, goal):
         rospy.loginfo("/BebopActionServer/cb_takeoff action_id %s", self.as_takeoff.current_goal.get_goal_id().id)
         self.controller.takeoff()
-        rospy.sleep(1)
+        #rospy.sleep(1)
         self.handle_feedback(self.as_takeoff)
 
 
@@ -111,7 +112,7 @@ class BebopActionServer(object):
         point_goal.header = goal.target_pose.header
         point_goal.point = goal.target_pose.pose.position
         self.controller.set_goal(point_goal)
-        rospy.sleep(1)
+        #rospy.sleep(1)
         self.handle_feedback(self.as_move)
 
     def mark_load_event(self, actionserver):
@@ -160,6 +161,9 @@ if __name__ == '__main__':
         bebop_as = BebopActionServer()
         rospy.sleep(0.1)
         bebop_as.spin()
+        rospy.loginfo("Start a spin")
+        while not rospy.is_shutdown():
+            rospy.sleep(0.1)
 
     except rospy.ROSInterruptException:
         print "Program interrupted before completion"

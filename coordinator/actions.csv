@@ -1,14 +1,7 @@
-takeoff, drone
-goto, drone, wp1
 goto, turtle, b
-goto, drone, wp0
-land, drone
-goto, turtle, c
-goto, turtle, a
-takeoff, drone
-goto, drone, wp1
-goto, turtle, d
-land, drone
+goto, turtle, b
+goto, turtle, b
+goto, turtle, b
 
-#Drone safely can go to h b c
-#Drone might go to d g e
+#Drone safely can go to h, b, c
+#Drone might go to d, g, e
