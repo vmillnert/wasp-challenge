@@ -26,28 +26,33 @@ class KnowledgeUpdateServiceEnum:
 
 class WorldState:
     def __init__(self):
-        self.node_name = "world_state"
+        
         # Initiate node
+        self.node_name = "world_state"
         rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO)
 
         # Initiate planner
         rospy.loginfo('/%s/__init__/' % self.node_name)
+
+        # Get parameters
+        self.use_rosplan = rospy.get_param('~use_rosplan', True)
+        rospack = rospkg.RosPack()
+        self.world_config_file = rospy.get_param("~world_config_file",
+                                                 os.path.join(rospack.get_path('coordinator'), 'config','test_world.yaml'))
 
         # Set up Publisher
         self.cmd_pub = rospy.Publisher("/kcl_rosplan/planning_commands", StringMsg, queue_size=10, latch = True)
 
         # Set up knowledge update service
         knowledge_service_name = "/kcl_rosplan/update_knowledge_base"
-        rospy.wait_for_service(knowledge_service_name)
+        if self.use_rosplan:
+            rospy.wait_for_service(knowledge_service_name)
         self.update_knowledge = rospy.ServiceProxy(knowledge_service_name, KnowledgeUpdateService)
 
-        rospy.wait_for_service("/kcl_rosplan/clear_knowledge_base")
-        self.clear_knowledge = rospy.ServiceProxy("/kcl_rosplan/clear_knowledge_base", Empty)
-
-        rospack = rospkg.RosPack()
-        self.world_config_file = rospy.get_param("~world_config_file",
-                                                 os.path.join(rospack.get_path('coordinator'), 'config','test_world.yaml'))
-
+        knowledge_service_name = "/kcl_rosplan/clear_knowledge_base"
+        if self.use_rosplan:
+            rospy.wait_for_service(knowledge_service_name)
+        self.clear_knowledge = rospy.ServiceProxy(knowledge_service_name, Empty)
 
         # Setup own services for coordinator
         self.waypoint_pos_service = rospy.Service('~get_waypoint_position', WaypointPosition, self.get_waypoint_position)
@@ -82,7 +87,10 @@ class WorldState:
             self.waypoint_positions[air_wp] = self.waypoint_positions[wp]
 
         
-        self.waypoint_positions
+        # TODO: Move to topics instead. Use latch and only publish a new topic when there is a change
+        rospy.set_param('/available_drones', self.objects['drone'])
+        rospy.set_param('/available_turtlebots', self.objects['turtlebot'])
+
         return True
 
     def generate_knowledge_base(self):
@@ -107,10 +115,6 @@ class WorldState:
                     new_at["a_%s" % wp] = [drone]
             new_at[wp] = new_objs
         self.at = new_at
-
-        # Even if the above lines will move to a config file, the following should hold as long as it is read as an object dictionary
-        rospy.set_param('/available_drones', self.objects['drone'])
-        rospy.set_param('/available_turtlebots', self.objects['turtlebot'])
 
         empty_waypoints = []
         valid_occupants =  self.objects['drone'] + self.objects['turtlebot']
