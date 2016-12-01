@@ -153,13 +153,9 @@ class BebopActionServer(object):
                 actionserver.set_aborted()
 
 if __name__ == '__main__':
-    try:
-        # Initialize the node
-        rospy.init_node('BebopActionServer', anonymous=True, log_level=rospy.INFO)
-        # create the controller object
-        bebop_as = BebopActionServer()
-        rospy.sleep(0.1)
-        bebop_as.spin()
-
-    except rospy.ROSInterruptException:
-        print "Program interrupted before completion"
+    # Initialize the node
+    rospy.init_node('BebopActionServer', anonymous=True, log_level=rospy.INFO)
+    # create the controller object
+    bebop_as = BebopActionServer()
+    rospy.sleep(0.1)
+    bebop_as.spin()
