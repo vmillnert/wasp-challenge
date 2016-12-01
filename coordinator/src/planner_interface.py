@@ -45,49 +45,65 @@ class PlannerInterface:
                                                  os.path.join(rospack.get_path('coordinator'), 'config','test_world.yaml'))
 
 
-    def setup_problem(self):
-        #updateSrv.request.update_type = KnowledgeUpdateService.ADD_KNOWLEDGE
+        # Variables for keeping track of the world
+        self.objects = {}
+        self.at = {}
+        self.waypoint_positions = {}
 
+        # Read config file
+        self.read_world_config()
+
+    
+    def read_world_config(self):
         if self.world_config_file == None:
             # No config file, start with empty world
-            return
+            return False
 
         #Load yaml file
         with open(self.world_config_file) as f:
             yaml_world = yaml.load(f)
-        objects = yaml_world['objects']
-        at = yaml_world['at']
-        waypoint_positions = yaml_world['waypoints']
+        self.objects = yaml_world['objects']
+        self.at = yaml_world['at']
+        self.waypoint_positions = yaml_world['waypoints']
 
+        # Add corresponding air waypoints
+        self.objects['airwaypoint'] = ["a_%s" % wp for wp in self.objects['waypoint']]
+
+        return True
+
+    def generate_knowledge_base(self):
 
         # Remove earlier entries from knowledge database
         self.clear_knowledge()
 
-        objects['airwaypoint'] = ["a_%s" % wp for wp in objects['waypoint']]
-
         # Build a new at dict where drones are in the corresponding air waypoint
         # TODO: Remove this when we have takeoff and land actions
         new_at = {}
-        for wp, objs in at.iteritems():
+        for wp, objs in self.at.iteritems():
             new_objs = copy(objs)
+            
+            # Only modify drones on ground waypoints
+            if wp not in self.objects['waypoint']:
+                continue
+
             # Remove drone from current waypoint, create new air waypoint
-            for drone in objects['drone']:
+            for drone in self.objects['drone']:
                 if drone in new_objs:
                     new_objs.remove(drone)
                     new_at["a_%s" % wp] = [drone]
             new_at[wp] = new_objs
-        at = new_at
+        self.at = new_at
 
         # Even if the above lines will move to a config file, the following should hold as long as it is read as an object dictionary
-        rospy.set_param('/available_drones', objects['drone'])
-        rospy.set_param('/available_turtlebots', objects['turtlebot'])
+        rospy.set_param('/available_drones', self.objects['drone'])
+        rospy.set_param('/available_turtlebots', self.objects['turtlebot'])
 
         empty_waypoints = []
-        valid_occupants =  objects['drone'] + objects['turtlebot']
-        for loc in objects['waypoint'] + objects['airwaypoint']:
+        valid_occupants =  self.objects['drone'] + self.objects['turtlebot']
+        for loc in self.objects['waypoint'] + self.objects['airwaypoint']:
             valid = False
-            if loc in at:
-                for o in at[loc]:
+            if loc in self.objects:
+                for o in self.objects[loc]:
                     valid = True if (o in valid_occupants) else valid
 
             if not valid:
@@ -95,9 +111,8 @@ class PlannerInterface:
 
        # Set up waypoint distances
         d = 20
-
-        for wp1 in objects['waypoint']:
-            for wp2 in objects['waypoint']:
+        for wp1 in self.objects['waypoint']:
+            for wp2 in self.objects['waypoint']:
                 kitem = KnowledgeItem()
                 kitem.knowledge_type = KnowledgeItem.FUNCTION
                 kitem.attribute_name = "move-duration"
@@ -105,8 +120,8 @@ class PlannerInterface:
                 kitem.function_value = 1 if wp1 == wp2 else d
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
-        for wp1 in objects['airwaypoint']:
-            for wp2 in objects['airwaypoint']:
+        for wp1 in self.objects['airwaypoint']:
+            for wp2 in self.objects['airwaypoint']:
                 kitem = KnowledgeItem()
                 kitem.knowledge_type = KnowledgeItem.FUNCTION
                 kitem.attribute_name = "move-duration"
@@ -115,7 +130,7 @@ class PlannerInterface:
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Set empty for agents and waypoints
-        for obj in objects['drone'] + objects['turtlebot'] + empty_waypoints:
+        for obj in self.objects['drone'] + self.objects['turtlebot'] + empty_waypoints:
             kitem = KnowledgeItem()
             kitem.knowledge_type = KnowledgeItem.FACT
             kitem.values = [KeyValue('aw_object', obj)]
@@ -123,7 +138,7 @@ class PlannerInterface:
             self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Add agents
-        for key, items in objects.iteritems():
+        for key, items in self.objects.iteritems():
             for item in items:
                 kitem = KnowledgeItem()
                 kitem.knowledge_type = KnowledgeItem.INSTANCE
@@ -132,7 +147,7 @@ class PlannerInterface:
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Add locations for agents and boxes
-        for key, values in at.iteritems():
+        for key, values in self.at.iteritems():
             for value in values:
                 kitem = KnowledgeItem()
                 kitem.knowledge_type = KnowledgeItem.FACT
@@ -141,22 +156,22 @@ class PlannerInterface:
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Set relation between air and ground waypoints
-        for air, ground in zip(objects['airwaypoint'], objects['waypoint']):
+        for air, ground in zip(self.objects['airwaypoint'], self.objects['waypoint']):
             kitem = KnowledgeItem()
             kitem.knowledge_type = KnowledgeItem.FACT
             kitem.values = [KeyValue('airwaypoint', air), KeyValue('waypoint', ground)]
             kitem.attribute_name = 'over'
             self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
-        # Set relation between air and ground waypoints
-        for person in objects['person']:
+        # Set goals, each person should be handled
+        for person in self.objects['person']:
             kitem = KnowledgeItem()
             kitem.knowledge_type = KnowledgeItem.FACT
             kitem.values = [KeyValue('person', person)]
             kitem.attribute_name = 'handled'
             self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_GOAL, knowledge=kitem)
 
-    def start(self):
+    def start_planner(self):
         self.cmd_pub.publish(StringMsg("plan"))
 
     def spin(self):
@@ -165,6 +180,6 @@ class PlannerInterface:
 
 if __name__ == '__main__':
     p_interface = PlannerInterface()
-    p_interface.setup_problem()
-    p_interface.start()
+    p_interface.generate_knowledge_base()
+    p_interface.start_planner()
     p_interface.spin()
