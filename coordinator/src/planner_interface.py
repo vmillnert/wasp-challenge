@@ -8,6 +8,8 @@ from rosplan_knowledge_msgs.msg import KnowledgeItem
 from rosplan_knowledge_msgs.srv import KnowledgeUpdateService
 
 import rospy
+import yaml
+from copy import copy
 
 
 class KnowledgeUpdateServiceEnum:
@@ -36,47 +38,52 @@ class PlannerInterface:
         rospy.wait_for_service("/kcl_rosplan/clear_knowledge_base")
         self.clear_knowledge = rospy.ServiceProxy("/kcl_rosplan/clear_knowledge_base", Empty)
 
+        self.world_config_file = rospy.get_param("~world_config_file",None)
+
 
     def setup_problem(self):
         #updateSrv.request.update_type = KnowledgeUpdateService.ADD_KNOWLEDGE
 
-        self.clear_knowledge()
+        if self.world_config_file == None:
+            # No config file, start with empty world
+            return
 
-        objects = {'waypoint': ['depo', 'wp0', 'wp1','wp2','wp3'],
-                    'drone': ['drone0', 'drone1'],
-                    'turtlebot': ['bot0', 'bot1'],
-                    'person': ['person0', 'person1'],
-                    'box': ['box0', 'box1', 'box2']}
+        #Load yaml file
+        with open(self.world_config_file) as f:
+            yaml_world = yaml.load(f)
+        objects = yaml_world['objects']
+        at = yaml_world['at']
+        waypoint_positions = yaml_world['waypoints']
+
+
+        # Remove earlier entries from knowledge database
+        self.clear_knowledge()
 
         objects['airwaypoint'] = ["a_%s" % wp for wp in objects['waypoint']]
 
-        at_dict = {'depo': objects['box'],
-                   'wp0': ['person0'],
-                   'wp1': ['person1'],
-                   'a_wp2': ['drone0'],
-                   'a_wp3': ['drone1']}
+        # Build a new at dict where drones are in the corresponding air waypoint
+        # TODO: Remove this when we have takeoff and land actions
+        new_at = {}
+        for wp, objs in at.iteritems():
+            new_objs = copy(objs)
+            # Remove drone from current waypoint, create new air waypoint
+            for drone in objects['drone']:
+                if drone in new_objs:
+                    new_objs.remove(drone)
+                    new_at["a_%s" % wp] = [drone]
+            new_at[wp] = new_objs
+        at = new_at
 
         # Even if the above lines will move to a config file, the following should hold as long as it is read as an object dictionary
         rospy.set_param('/available_drones', objects['drone'])
         rospy.set_param('/available_turtlebots', objects['turtlebot'])
 
-        # objects = {'waypoint': ['depo', 'wp0'],
-        #             'airwaypoint': ['a_depo', 'a_wp0'],
-        #             'drone': ['drone0'],
-        #             'turtlebot': [],
-        #             'person': ['person0'],
-        #             'box': ['box0']}
-
-        # at_dict = {'depo': objects['box'],
-        #            'wp0': ['person0'],
-        #            'a_wp0': ['drone0']}
-
         empty_waypoints = []
         valid_occupants =  objects['drone'] + objects['turtlebot']
         for loc in objects['waypoint'] + objects['airwaypoint']:
             valid = False
-            if loc in at_dict:
-                for o in at_dict[loc]:
+            if loc in at:
+                for o in at[loc]:
                     valid = True if (o in valid_occupants) else valid
 
             if not valid:
@@ -121,7 +128,7 @@ class PlannerInterface:
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Add locations for agents and boxes
-        for key, values in at_dict.iteritems():
+        for key, values in at.iteritems():
             for value in values:
                 kitem = KnowledgeItem()
                 kitem.knowledge_type = KnowledgeItem.FACT
