@@ -26,11 +26,12 @@ class KnowledgeUpdateServiceEnum:
 
 class WorldState:
     def __init__(self):
+        self.node_name = "world_state"
         # Initiate node
-        rospy.init_node('world_state', anonymous=False, log_level=rospy.INFO)
+        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO)
 
         # Initiate planner
-        rospy.loginfo('/worldState/__init__/')
+        rospy.loginfo('/%s/__init__/' % self.node_name)
 
         # Set up Publisher
         self.cmd_pub = rospy.Publisher("/kcl_rosplan/planning_commands", StringMsg, queue_size=10, latch = True)
@@ -49,7 +50,8 @@ class WorldState:
 
 
         # Setup own services for coordinator
-        s = rospy.Service('~get_waypoint_position', WaypointPosition, self.get_waypoint_position)
+        self.waypoint_pos_service = rospy.Service('~get_waypoint_position', WaypointPosition, self.get_waypoint_position)
+        self.replan_service = rospy.Service('~plan', Empty, self.start_planner)
 
         # Variables for keeping track of the world
         self.objects = {}
@@ -202,7 +204,9 @@ class WorldState:
 
         return p_srv
 
-    def start_planner(self):
+    def start_planner(self, request):
+        rospy.loginfo('/%s/start_planner/ Generating knowledge base and starting planner' % self.node_name)
+        self.generate_knowledge_base()
         self.cmd_pub.publish(StringMsg("plan"))
 
     def spin(self):
@@ -211,6 +215,4 @@ class WorldState:
 
 if __name__ == '__main__':
     ws = WorldState()
-    ws.generate_knowledge_base()
-    ws.start_planner()
     ws.spin()
