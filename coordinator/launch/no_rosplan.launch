@@ -1,7 +1,20 @@
 <launch>
+  <!-- Start the Bebop Action Server -->
+  <!--
+  <node name="bebop_action_server" pkg="bebop_controller" type="BebopActionServer.py" output="screen">
+  <param name="test_mode" type="boolean" value="true" />
+  </node>
+  -->
+
   <node pkg="coordinator" type="main.py" name="coordinator" args="$(find coordinator)/waypoints.csv" output="screen">
   <param name="coordinate_frame" type="string" value="map" />
   </node>
+  
+  <node pkg="coordinator" type="world_state.py" name="world_state" output="screen">
+  	<param name="use_rosplan" type="boolean" value="False" />
+  	<param name="world_config_file" type="string" value="$(find coordinator)/config/test_world.yaml" />
+  </node>
+  
   <node pkg="coordinator" type="action_feeder.py" name="action_feeder" args="$(find coordinator)/actions.csv" output="screen">
   </node>
 </launch>
