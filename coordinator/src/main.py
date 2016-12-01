@@ -201,7 +201,7 @@ class Coordinator:
         if obj in rospy.get_param('/available_drones'):
             goal = BebopMoveBaseGoal()
             ac = self.bebop_move_ac
-        elif obj == rospy.get_param('/available_turtlebots'):
+        elif obj in rospy.get_param('/available_turtlebots'):
             goal = MoveBaseGoal()
             ac = self.turtle_move_ac
         if ac == None:
