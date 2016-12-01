@@ -54,8 +54,6 @@ class Action:
 
 class Coordinator:
     def __init__(self, wp_file):
-        self.waypoints = self.read_waypoints(wp_file)
-
         rospy.init_node('coordinator', anonymous=True, log_level=rospy.INFO)
 
         rospy.loginfo('/coordinator/__init__/ - Using waypoints from %s', wp_file)
@@ -83,16 +81,6 @@ class Coordinator:
         waypoint_srv_name = 'world_state/get_waypoint_position'
         rospy.wait_for_service(waypoint_srv_name)
         self.get_waypoint_position = rospy.ServiceProxy(waypoint_srv_name, WaypointPosition)
-
-
-    def read_waypoints(self, filename):
-        waypoints = None
-        with open(filename, 'r') as csvfile:
-            r = csv.reader(csvfile)
-            waypoints = {w[0] : (float(w[1]),float(w[2])) for w in r}
-
-        return waypoints
-
 
     def action_dispatch_callback(self, msg):
         # Check Action type and call correct functions.
