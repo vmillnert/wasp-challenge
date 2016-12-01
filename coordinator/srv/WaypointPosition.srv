@@ -1,0 +1,5 @@
+string wp
+---
+float64 x
+float64 y
+bool valid
