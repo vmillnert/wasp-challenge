@@ -2,4 +2,3 @@ takeoff, drone
 goto, drone0, wp1
 goto, bot0, wp1
 land, drone0
-

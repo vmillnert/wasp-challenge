@@ -1,0 +1,6 @@
+<launch>
+  <param name="test_mode" value="True" type="bool" />
+  <!-- Start the Bebop Action Server in test mode -->
+
+  <node name="bebop_action_server" pkg="bebop_controller" type="BebopActionServer.py" output="screen"/>
+</launch>

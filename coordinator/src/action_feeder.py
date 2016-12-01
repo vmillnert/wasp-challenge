@@ -37,9 +37,7 @@ class ActionFeeder:
         self.action_pub = rospy.Publisher("/kcl_rosplan/action_dispatch", ActionDispatch, queue_size=10)
 
         rospy.Subscriber("/kcl_rosplan/action_feedback", ActionFeedback, self.action_feedback_callback)
-        
-        rospy.sleep(2)
-
+#        rospy.sleep(2)
 
     def read_actions(self, filename):
         actions = []
@@ -78,6 +76,8 @@ class ActionFeeder:
             raise ActionFeedError("Action failed, aborting!")
     
     def run(self):
+        while(self.action_pub.get_num_connections() < 1):
+            rospy.sleep(0.1)
         for i, action in enumerate(self.actions):
             self.current_msg.action_id = i
             self.current_msg.name = action[0]

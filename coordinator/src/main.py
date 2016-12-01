@@ -250,6 +250,6 @@ if __name__ == '__main__':
         print("usage: coordinator.py waypoint_file")
     else:
         coordinator = Coordinator(sys.argv[1])
-        rospy.sleep(0.1)
+        #rospy.sleep(0.1)
         #coordinator.test_actions()
         coordinator.spin()
