@@ -17,3 +17,9 @@
 [submodule "rosplan"]
 	path = rosplan
 	url = https://github.com/DavidGillsjo/ROSPlan.git
+[submodule "ardrone_autonomy"]
+	path = ardrone_autonomy
+	url = https://github.com/AutonomyLab/ardrone_autonomy.git
+[submodule "thinc_simulator"]
+	path = thinc_simulator
+	url = https://github.com/thinclab/thinc_simulator.git
