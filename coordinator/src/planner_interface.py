@@ -8,8 +8,10 @@ from rosplan_knowledge_msgs.msg import KnowledgeItem
 from rosplan_knowledge_msgs.srv import KnowledgeUpdateService
 
 import rospy
+import rospkg
 import yaml
 from copy import copy
+import os
 
 
 class KnowledgeUpdateServiceEnum:
@@ -38,7 +40,9 @@ class PlannerInterface:
         rospy.wait_for_service("/kcl_rosplan/clear_knowledge_base")
         self.clear_knowledge = rospy.ServiceProxy("/kcl_rosplan/clear_knowledge_base", Empty)
 
-        self.world_config_file = rospy.get_param("~world_config_file",None)
+        rospack = rospkg.RosPack()
+        self.world_config_file = rospy.get_param("~world_config_file",
+                                                 os.path.join(rospack.get_path('coordinator'), 'config','test_world.yaml'))
 
 
     def setup_problem(self):
