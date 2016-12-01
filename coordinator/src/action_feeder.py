@@ -53,11 +53,11 @@ class ActionFeeder:
     def action_feedback_callback(self, msg):
         rospy.loginfo('action_feeder:Receiving feedback on action id: %i, status: %s', msg.action_id, msg.status)
         assert(self.current_msg.action_id == msg.action_id)
-        if msg.status == "action_enabled":
+        if msg.status == "action enabled":
             self.status = ActionStatus.RECEIVED
-        elif msg.status == "action_failed":
+        elif msg.status == "action failed":
             self.status = ActionStatus.FAILED
-        elif msg.status == "action_achieved":
+        elif msg.status == "action achieved":
             self.status = ActionStatus.COMPLETED
 
 
@@ -81,9 +81,9 @@ class ActionFeeder:
         for i, action in enumerate(self.actions):
             self.current_msg.action_id = i
             self.current_msg.name = action[0]
-            self.current_msg.parameters = [KeyValue('obj',action[1])]
+            self.current_msg.parameters = [KeyValue('agent',action[1])]
             if action[0] == ActionName.goto:
-                self.current_msg.parameters.append(KeyValue('wp',action[2]))
+                self.current_msg.parameters.append(KeyValue('to',action[2]))
             self.dispatch()
 
 

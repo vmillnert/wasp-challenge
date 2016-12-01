@@ -40,9 +40,9 @@ class Action:
         self.obj = None
         self.wp = None
         for p in self.parameters:
-            if p.key == "obj":
+            if p.key == "agent" or p.key == "drone":
                 self.obj = p.value
-            if p.key == "wp":
+            if p.key == "to":
                 self.wp = p.value
 
         if self.obj == None:
@@ -93,6 +93,7 @@ class Coordinator:
         action = Action(msg)
         rospy.loginfo('/coordinator/action_dispatch_callback obj "%s", action "%s"', action.obj, action.name)
 
+        # Shared actions between action feeder and planner
         if (msg.name == 'goto'):
             self.action_goto(action)
         elif (msg.name == 'takeoff'):
@@ -105,6 +106,11 @@ class Coordinator:
             self.action_unload(action)
         elif (msg.name == 'follow'):
             self.action_follow(action)
+        #Actions only defined by planner
+        elif (msg.name == 'pick-up'):
+            self.action_load(action)
+        elif (msg.name == 'hand-over'):
+            self.action_load(action)
         else:
             rospy.loginfo("No action called %s for obj %s", msg.name, msg.obj)
 
@@ -113,9 +119,9 @@ class Coordinator:
         feedback_msg = ActionFeedback()
         feedback_msg.action_id = action_id
         if (state == GoalStatus.SUCCEEDED):
-        	feedback_msg.status = "action_achieved"
+        	feedback_msg.status = "action achieved"
         else:
-        	feedback_msg.status = "action_failed"
+        	feedback_msg.status = "action failed"
 
         self.feedback_pub.publish(feedback_msg)
 
@@ -124,7 +130,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_takeoff for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_takeoff_ac
 
@@ -138,7 +144,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_land for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_land_ac
 
@@ -152,7 +158,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_load for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_load_ac
 
@@ -166,7 +172,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_unload for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_unload_ac
 
@@ -180,7 +186,7 @@ class Coordinator:
         rospy.loginfo('/coordinator/action_follow for %s', action.obj)
 
         action_id = action.action_id
-        feedback_msg = ActionFeedback(action_id=action_id, status="action_enabled")
+        feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
         ac = self.bebop_follow_ac
 
@@ -198,10 +204,10 @@ class Coordinator:
         wp = action.wp
 
         ac = None
-        if obj == "drone":
+        if obj in rospy.get_param('/available_drones'):
             goal = BebopMoveBaseGoal()
             ac = self.bebop_move_ac
-        elif obj == "turtle":
+        elif obj == rospy.get_param('/available_turtlebots'):
             goal = MoveBaseGoal()
             ac = self.turtle_move_ac
         if ac == None:
@@ -211,16 +217,13 @@ class Coordinator:
             rospy.loginfo("server timeout")
 
         goal.target_pose.header.frame_id = self.coordinate_frame
-        if obj == "drone":
-            goal.target_pose.header.frame_id = "bebop/odom"
         goal.target_pose.header.stamp = rospy.Time.now()
-
         goal.target_pose.pose.position.x = self.waypoints[wp][0]
         goal.target_pose.pose.position.y = self.waypoints[wp][1]
         goal.target_pose.pose.orientation.w = 1
 
         # Notify action dispatcher of status
-        feedback_msg = ActionFeedback(action_id = action_id, status = "action_enabled")
+        feedback_msg = ActionFeedback(action_id = action_id, status = "action enabled")
         self.feedback_pub.publish(feedback_msg)
 
         ac.send_goal(goal)
