@@ -6,12 +6,15 @@ from std_msgs.msg import String as StringMsg
 from diagnostic_msgs.msg import KeyValue
 from rosplan_knowledge_msgs.msg import KnowledgeItem
 from rosplan_knowledge_msgs.srv import KnowledgeUpdateService
+from geometry_msgs.msg import Point
+from coordinator.srv import *
 
 import rospy
 import rospkg
 import yaml
 from copy import copy
 import os
+from math import sqrt
 
 
 class KnowledgeUpdateServiceEnum:
@@ -21,13 +24,13 @@ class KnowledgeUpdateServiceEnum:
     REMOVE_GOAL = 3
 
 
-class PlannerInterface:
+class WorldState:
     def __init__(self):
         # Initiate node
-        rospy.init_node('planner_interface', anonymous=True, log_level=rospy.INFO)
+        rospy.init_node('world_state', anonymous=False, log_level=rospy.INFO)
 
         # Initiate planner
-        rospy.loginfo('/plannerInterface/__init__/')
+        rospy.loginfo('/worldState/__init__/')
 
         # Set up Publisher
         self.cmd_pub = rospy.Publisher("/kcl_rosplan/planning_commands", StringMsg, queue_size=10, latch = True)
@@ -44,6 +47,9 @@ class PlannerInterface:
         self.world_config_file = rospy.get_param("~world_config_file",
                                                  os.path.join(rospack.get_path('coordinator'), 'config','test_world.yaml'))
 
+
+        # Setup own services for coordinator
+        s = rospy.Service('~get_waypoint_position', WaypointPosition, self.get_waypoint_position)
 
         # Variables for keeping track of the world
         self.objects = {}
@@ -67,8 +73,14 @@ class PlannerInterface:
         self.waypoint_positions = yaml_world['waypoints']
 
         # Add corresponding air waypoints
-        self.objects['airwaypoint'] = ["a_%s" % wp for wp in self.objects['waypoint']]
+        self.objects['airwaypoint'] = []
+        for wp in self.objects['waypoint']:
+            air_wp = "a_%s" % wp
+            self.objects['airwaypoint'].append(air_wp)
+            self.waypoint_positions[air_wp] = self.waypoint_positions[wp]
 
+        
+        self.waypoint_positions
         return True
 
     def generate_knowledge_base(self):
@@ -117,7 +129,7 @@ class PlannerInterface:
                 kitem.knowledge_type = KnowledgeItem.FUNCTION
                 kitem.attribute_name = "move-duration"
                 kitem.values = [KeyValue('from', wp1), KeyValue('to', wp2)]
-                kitem.function_value = 1 if wp1 == wp2 else d
+                kitem.function_value = self.waypoint_distance(wp1,wp2)
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         for wp1 in self.objects['airwaypoint']:
@@ -126,7 +138,7 @@ class PlannerInterface:
                 kitem.knowledge_type = KnowledgeItem.FUNCTION
                 kitem.attribute_name = "move-duration"
                 kitem.values = [KeyValue('from', wp1), KeyValue('to', wp2)]
-                kitem.function_value = 1 if wp1 == wp2 else d
+                kitem.function_value = self.waypoint_distance(wp1,wp2)
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Set empty for agents and waypoints
@@ -171,6 +183,25 @@ class PlannerInterface:
             kitem.attribute_name = 'handled'
             self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_GOAL, knowledge=kitem)
 
+    def waypoint_distance(self, wp1, wp2):
+        if wp1 == wp2:
+            return 0
+
+        p1 = self.waypoint_positions[wp1]
+        p2 = self.waypoint_positions[wp2]
+        d = sqrt((p1['x'] - p2['x'])**2 + (p1['y'] - p2['y'])**2)
+        
+        return d
+
+    def get_waypoint_position(self,wp_req):
+        try:
+            wp_position = self.waypoint_positions[wp_req.wp]
+            p_srv = WaypointPositionResponse(x = wp_position['x'], y = wp_position['y'], valid = True)
+        except KeyError:
+            p_srv = WaypointPositionResponse(x = 0, y = 0, valid = False)
+
+        return p_srv
+
     def start_planner(self):
         self.cmd_pub.publish(StringMsg("plan"))
 
@@ -179,7 +210,7 @@ class PlannerInterface:
 
 
 if __name__ == '__main__':
-    p_interface = PlannerInterface()
-    p_interface.generate_knowledge_base()
-    p_interface.start_planner()
-    p_interface.spin()
+    ws = WorldState()
+    ws.generate_knowledge_base()
+    ws.start_planner()
+    ws.spin()

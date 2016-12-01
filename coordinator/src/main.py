@@ -12,6 +12,7 @@ from std_msgs.msg import String
 from diagnostic_msgs.msg import KeyValue
 from bebop_controller.msg import *
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+from coordinator.srv import *
 
 
 class ActionName:
@@ -77,6 +78,11 @@ class Coordinator:
 
         # Interface to ROSplan
         rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
+
+        # Interface to WorldState
+        waypoint_srv_name = 'world_state/get_waypoint_position'
+        rospy.wait_for_service(waypoint_srv_name)
+        self.get_waypoint_position = rospy.ServiceProxy(waypoint_srv_name, WaypointPosition)
 
 
     def read_waypoints(self, filename):
@@ -216,10 +222,15 @@ class Coordinator:
         if not ac.wait_for_server(timeout=rospy.Duration(10)):
             rospy.loginfo("server timeout")
 
+        #Get waypoint position from world state node
+        p_rsp = self.get_waypoint_position(wp = wp)
+        if not p_rsp.valid:
+            raise CoordinatorError("No valid position for waypoint %s" % wp)
+
         goal.target_pose.header.frame_id = self.coordinate_frame
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose.position.x = self.waypoints[wp][0]
-        goal.target_pose.pose.position.y = self.waypoints[wp][1]
+        goal.target_pose.pose.position.x = p_rsp.x
+        goal.target_pose.pose.position.y = p_rsp.y
         goal.target_pose.pose.orientation.w = 1
 
         # Notify action dispatcher of status
