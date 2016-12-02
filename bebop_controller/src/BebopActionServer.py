@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 
+import os
 import roslib
 import rospy
 
-from controller import Controller, ActionStatus
+from controller import BebopController, ARDroneSimController, ActionStatus
 from geometry_msgs.msg import PointStamped
 
 from bebop_controller.msg import *
@@ -58,8 +59,11 @@ class BebopActionServer(object):
             rospy.loginfo("%s running", "testmode")
             self.controller = TestController()
         else:
-            self.controller = Controller("bebop")
-            self.controller.set_mode("auto")
+          if 'DRONESIM' in os.environ or rospy.get_param('~sim', False):
+            self.controller = ARDroneSimController('drone0')
+          else:
+            self.controller = BebopController("bebop")
+          self.controller.set_mode("auto")
 
 
         # Finally, start action servers

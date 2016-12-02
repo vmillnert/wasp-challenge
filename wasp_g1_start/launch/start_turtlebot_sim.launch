@@ -12,11 +12,11 @@
    <arg name="3d_sensor" value="$(arg 3d_sensor)"/>
   </include>
 
+  <!-- NOTE: urdf_file param is from include above -->
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="30.0" />
   </node>
-
- <!-- Fake laser -->
+<!-- Fake laser -->
   <node pkg="nodelet" type="nodelet" name="laserscan_nodelet_manager" args="manager"/>
   <node pkg="nodelet" type="nodelet" name="depthimage_to_laserscan"
         args="load depthimage_to_laserscan/DepthImageToLaserScanNodelet laserscan_nodelet_manager">
