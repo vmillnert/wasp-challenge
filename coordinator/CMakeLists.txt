@@ -64,6 +64,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_service_files(
    FILES
    WaypointPosition.srv
+   ActionFinished.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -79,6 +80,7 @@ find_package(catkin REQUIRED COMPONENTS
 generate_messages(
    DEPENDENCIES
    std_msgs
+   rosplan_dispatch_msgs
 )
 
 ################################################
