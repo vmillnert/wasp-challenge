@@ -1,7 +1,19 @@
 <?xml version="1.0"?>
 <launch>
   <!-- Spawn simulated quadrotor uav -->
-  <include file="$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch" >
-    <arg name="model" value="$(find thinc_sim_gazebo)/urdf/quadrotor_sensors.urdf.xacro"/> 
-  </include>
+  <group ns="drone0">
+    <param name="tf_prefix" value="drone0"/>-->
+    <include file="$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch" >
+      <arg name="model" value="$(find thinc_sim_gazebo)/urdf/quadrotor_sensors.urdf.xacro"/> 
+     <arg name="robot_namespace" value="drone0"/>
+    </include>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="drone0_st_pub" >
+   <!--   <remap from="robot_description" to="different_robot_description" />
+      <remap from="joint_states" to="different_joint_states" />-->
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="map_to_drone0" args="0 0 0 0 0 0 map drone0/base_link 100"/>
+
+  </group>
 </launch>
