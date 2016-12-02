@@ -9,6 +9,12 @@
   <param name="coordinate_frame" type="string" value="map" />
   </node>
 
+  <!-- Start the World state node -->
+  <node pkg="coordinator" type="world_state.py" name="world_state" output="screen">
+  	<param name="use_rosplan" type="boolean" value="True" />
+  	<param name="world_config_file" type="string" value="$(find coordinator)/config/test_world.yaml" />
+  </node>
+
   <!-- Start the Action feeder 
   <node pkg="coordinator" type="action_feeder.py" name="action_feeder" args="$(find coordinator)/actions_bebop.csv" output="screen">
   </node>
