@@ -54,7 +54,7 @@ class BebopActionServer(object):
         self.loop_rate = rospy.Rate(10)
 
         # Setup controller
-        if rospy.get_param('test_mode', False):
+        if rospy.get_param('~test_mode', False):
             rospy.loginfo("%s running", "testmode")
             self.controller = TestController()
         else:
