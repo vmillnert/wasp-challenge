@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import String as StringMsg
 from diagnostic_msgs.msg import KeyValue
 from rosplan_knowledge_msgs.msg import KnowledgeItem
@@ -57,11 +57,14 @@ class WorldState:
         # Setup own services for coordinator
         self.waypoint_pos_service = rospy.Service('~get_waypoint_position', WaypointPosition, self.get_waypoint_position)
         self.replan_service = rospy.Service('~plan', Empty, self.start_planner)
+        self.action_finished_service = rospy.Service('~action_finished', ActionFinished, self.action_finished_cb)
 
         # Variables for keeping track of the world
         self.objects = {}
         self.at = {}
         self.waypoint_positions = {}
+        self.carrying = {}
+        self.rescued = []
 
         # Read config file
         self.read_world_config()
@@ -86,7 +89,14 @@ class WorldState:
             self.objects['airwaypoint'].append(air_wp)
             self.waypoint_positions[air_wp] = self.waypoint_positions[wp]
 
+        # Initiate carrying dict
+        self.carrying = {agent: [] for agent in (self.objects['drone'] + self.objects['turtlebot'])}
         
+        # Initate empty waypoints
+        for wp in (self.objects['waypoint'] + self.objects['airwaypoint']):
+            if not (wp in self.at):
+                self.at[wp] = []
+
         # TODO: Move to topics instead. Use latch and only publish a new topic when there is a change
         rospy.set_param('/available_drones', self.objects['drone'])
         rospy.set_param('/available_turtlebots', self.objects['turtlebot'])
@@ -100,20 +110,19 @@ class WorldState:
 
         # Build a new at dict where drones are in the corresponding air waypoint
         # TODO: Remove this when we have takeoff and land actions
-        new_at = {}
+        new_at = copy(self.at)
         for wp, objs in self.at.iteritems():
             new_objs = copy(objs)
             
-            # Only modify drones on ground waypoints
+            # Only look for drones at ground waypoints
             if wp not in self.objects['waypoint']:
                 continue
-
             # Remove drone from current waypoint, create new air waypoint
             for drone in self.objects['drone']:
                 if drone in new_objs:
-                    new_objs.remove(drone)
-                    new_at["a_%s" % wp] = [drone]
-            new_at[wp] = new_objs
+                    new_at[wp].remove(drone)
+                    new_at["a_%s" % wp].append(drone)
+
         self.at = new_at
 
         empty_waypoints = []
@@ -128,7 +137,6 @@ class WorldState:
                 empty_waypoints.append(loc)
 
        # Set up waypoint distances
-        d = 20
         for wp1 in self.objects['waypoint']:
             for wp2 in self.objects['waypoint']:
                 kitem = KnowledgeItem()
@@ -208,10 +216,42 @@ class WorldState:
 
         return p_srv
 
+    def action_finished_cb(self,action_req):
+        action = action_req.action
+        params = {p.key: p.value for p in action.parameters}
+
+        if action.name == 'goto':
+            self.at[params['from']].remove(params['agent'])
+            self.at[params['to']].append(params['agent'])
+
+        elif action.name == 'pick-up':
+            self.at[params['ground']].remove(params['box'])
+            self.carrying[params['drone']].append(params['box'])
+
+        elif action.name == 'hand-over':
+            self.carrying[params['turtlebot']].append(params['box'])
+            self.carrying[params['drone']].remove(params['box'])
+
+        elif action.name == 'unload':
+            self.carrying[params['drone']].remove(params['box'])
+            self.rescued.append(params['person'])
+
+        return ActionFinishedResponse()
+
     def start_planner(self, request):
         rospy.loginfo('/%s/start_planner/ Generating knowledge base and starting planner' % self.node_name)
         self.generate_knowledge_base()
         self.cmd_pub.publish(StringMsg("plan"))
+
+        return EmptyResponse()
+
+    def print_state(self):
+        print "-----------World State----------"
+        print "Persons rescued: %s" % ",".join(self.rescued)
+        print "Locations:"
+        for wp, objs in self.at.iteritems():
+            print "%s: %s" % (wp, ",".join(objs))
+        print "--------------------------------"
 
     def spin(self):
         rospy.spin()

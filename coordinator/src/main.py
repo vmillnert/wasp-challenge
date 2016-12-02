@@ -33,6 +33,7 @@ class CoordinatorError(Exception):
 
 class Action:
     def __init__(self, action_dispatch_msg):
+        self.msg = action_dispatch_msg
         self.action_id = action_dispatch_msg.action_id
         self.name = action_dispatch_msg.name
 
@@ -40,6 +41,7 @@ class Action:
 
         self.obj = None
         self.wp = None
+
         for p in self.parameters:
             if p.key == "agent" or p.key == "drone":
                 self.obj = p.value
@@ -82,6 +84,10 @@ class Coordinator:
         rospy.wait_for_service(waypoint_srv_name)
         self.get_waypoint_position = rospy.ServiceProxy(waypoint_srv_name, WaypointPosition)
 
+        srv_name = 'world_state/action_finished'
+        rospy.wait_for_service(srv_name)
+        self.action_finished_update = rospy.ServiceProxy(srv_name, ActionFinished)
+
     def action_dispatch_callback(self, msg):
         # Check Action type and call correct functions.
         action = Action(msg)
@@ -109,15 +115,18 @@ class Coordinator:
             rospy.loginfo("No action called %s for obj %s", msg.name, msg.obj)
 
 
-    def _action_feedback_from_state(self, action_id, state):
-        feedback_msg = ActionFeedback()
-        feedback_msg.action_id = action_id
-        if (state == GoalStatus.SUCCEEDED):
-        	feedback_msg.status = "action achieved"
-        else:
-        	feedback_msg.status = "action failed"
+    def _action_feedback_from_state(self, action, state):
+        success = (state == GoalStatus.SUCCEEDED)
 
+        # Feedback to rosplan
+        feedback_msg = ActionFeedback()
+        feedback_msg.action_id = action.action_id
+        feedback_msg.status = "action achieved" if success else "action failed"
         self.feedback_pub.publish(feedback_msg)
+
+        # Update world state
+        update_request = ActionFinishedRequest(action = action.msg, success = success)
+        self.action_finished_update(update_request)
 
 
     def action_takeoff(self, action):
@@ -131,7 +140,7 @@ class Coordinator:
         ac.send_goal(BebopTakeOffGoal())
         ac.wait_for_result()
 
-        self._action_feedback_from_state(action_id, ac.get_state())
+        self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_land(self, action):
@@ -145,7 +154,7 @@ class Coordinator:
         ac.send_goal(BebopLandGoal())
         ac.wait_for_result()
 
-        self._action_feedback_from_state(action_id, ac.get_state())
+        self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_load(self, action):
@@ -159,7 +168,7 @@ class Coordinator:
         ac.send_goal(BebopLoadGoal())
         ac.wait_for_result()
 
-        self._action_feedback_from_state(action_id, ac.get_state())
+        self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_unload(self, action):
@@ -173,7 +182,7 @@ class Coordinator:
         ac.send_goal(BebopUnloadGoal())
         ac.wait_for_result()
 
-        self._action_feedback_from_state(action_id, ac.get_state())
+        self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_follow(self, action):
@@ -187,7 +196,7 @@ class Coordinator:
         ac.send_goal(BebopFollowGoal())
         ac.wait_for_result()
 
-        self._action_feedback_from_state(action_id, ac.get_state())
+        self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_goto(self, action):
@@ -228,7 +237,7 @@ class Coordinator:
         ac.send_goal(goal)
         ac.wait_for_result()
 
-        self._action_feedback_from_state(action_id, ac.get_state())
+        self._action_feedback_from_state(action, ac.get_state())
 
 
     def test_actions(self):
