@@ -25,6 +25,8 @@ then
   roslaunch world ardrone_sim.launch >logs/drone.log 2>&1 &
   PIDS+=($!);
   sleep 5;
+  DRONESIM= rosrun bebop_controller BebopActionServer.py > logs/dronecontroller.log 2>&1 &
+  PIDS+=($!);
 fi;
 
 echo "Add map"

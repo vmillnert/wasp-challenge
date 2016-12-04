@@ -33,17 +33,18 @@ class ActionStatus:
     FAILED = 2
     COMPLETED = 3
 
-class ARDroneState:
-  UNKNOWN = 0
-  INITED = 1
-  LANDED = 2
-  FLYING1 = 3
-  FLYING2 = 7
-  HOVERING = 4
-  TEST = 5
-  TAKING_OFF = 6
-  LANDING = 8
-  LOOPING = 9
+ARDroneState = {
+  'UNKNOWN': 0,
+  'INITED':1,
+  'LANDED': 2,
+  'FLYING1': 3,
+  'FLYING2': 7,
+  'HOVERING': 4,
+  'TEST': 5,
+  'TAKING_OFF': 6,
+  'LANDING': 8,
+  'LOOPING': 9
+}
 
 class Action:
   NONE = 0
@@ -173,13 +174,13 @@ class ARDroneSimController(Controller):
     self.lock.acquire();
     s = self.navdata.state
     self.lock.release();
-    return s == ARDroneState.FLYING1 or s == ARDroneState.FLYING2 or s == ARDroneState.HOVERING or s == ARDroneState.LOOPING;
+    return s == ARDroneState['FLYING1'] or s == ARDroneState['FLYING2'] or s == ARDroneState['HOVERING'] or s == ARDroneState['LOOPING'];
 
   def grounded(self):
     self.lock.acquire();
     s = self.navdata.state
     self.lock.release();
-    return s == ARDroneState.INITED or s == ARDroneState.LANDED
+    return s == ARDroneState['INITED'] or s == ARDroneState['LANDED']
  
   def run(self):
     # TODO: Move into base class
@@ -198,13 +199,13 @@ class ARDroneSimController(Controller):
     msg = Twist()
     msg.linear.x = msg.linear.y = msg.linear.z = 0
     self.pub_vel.publish(msg)
-    
+   
     while not rospy.is_shutdown():
       self.lock.acquire()
       printcounter += 1
       if printcounter == self.rate:
-        print("Drone state {}\n  pose [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f})]\n  velocity ({:3.1f},{:3.1f},{:3.1f} [S({:3.1f},{:3.1f},{:3.1f})])".format(
-          self.navdata.state,
+        print("{} is {}\n  pose [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f})]\n  velocity ({:3.1f},{:3.1f},{:3.1f} [S({:3.1f},{:3.1f},{:3.1f})])".format(self._name,
+          ARDroneState.keys()[ARDroneState.values().index(self.navdata.state)],
           self.pose.position.x, self.pose.position.y, self.pose.position.z, 
           self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w,
           self.navdata.vx, self.navdata.vy, self.navdata.vz,
