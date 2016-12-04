@@ -1,6 +1,9 @@
 takeoff, drone
+wait
 goto, drone0, wp0
 goto, bot0, wp0
+wait
 goto, drone0, wp1
 land, drone0
+wait
 goto, bot0, depo
