@@ -141,14 +141,13 @@ class ARDroneSimController(Controller):
     self.rate = 50
 
     # Subscribers
-    rospy.Subscriber(self._name+'/ardrone/navdata', Navdata, self.cb_navdata)
-    rospy.Subscriber('gazebo/model_states', ModelStates, self.cb_modelstates)
+    rospy.Subscriber('ardrone/navdata', Navdata, self.cb_navdata)
+    rospy.Subscriber('/gazebo/model_states', ModelStates, self.cb_modelstates)
 
     # Publishers
-    print(self._name);
-    self.pub_takeoff = rospy.Publisher(self._name+'/ardrone/takeoff', Empty, queue_size=10)
-    self.pub_land = rospy.Publisher(self._name+'/ardrone/land', Empty, queue_size=10)
-    self.pub_vel = rospy.Publisher(self._name+'/cmd_vel', Twist, queue_size=10) # TODO!!! Namespace
+    self.pub_takeoff = rospy.Publisher('ardrone/takeoff', Empty, queue_size=10)
+    self.pub_land = rospy.Publisher('ardrone/land', Empty, queue_size=10)
+    self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10) # TODO!!! Namespace
 
     self.pose = Pose()
     self.target = Pose()

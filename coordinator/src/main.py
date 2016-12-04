@@ -91,18 +91,18 @@ class Client:
 class TurtleClient(Client):
   def __init__(self, name):
     Client.__init__(self, name)
-    self.actions = { 'turtle_move_ac': SimpleActionClient("move_base", MoveBaseAction) }
+    self.actions = { 'goto': SimpleActionClient("move_base", MoveBaseAction) }
 
 class DroneClient(Client):
   def __init__(self, name):
     Client.__init__(self, name)
     self.actions = {
-        'bebop_land_ac' : SimpleActionClient("BebopLandAction", BebopLandAction),
-        'bebop_load_ac' : SimpleActionClient("BebopLoadAction", BebopLoadAction),
-        'bebop_move_ac' : SimpleActionClient("BebopMoveBaseAction", BebopMoveBaseAction),
-        'bebop_takeoff_ac' : SimpleActionClient("BebopTakeOffAction", BebopTakeOffAction),
-        'bebop_unload_ac' : SimpleActionClient("BebopUnloadAction", BebopUnloadAction),
-        'bebop_follow_ac' : SimpleActionClient("BebopFollowAction", BebopFollowAction),
+        'land' : SimpleActionClient(name+"/BebopLandAction", BebopLandAction),
+        'load' : SimpleActionClient(name+"/BebopLoadAction", BebopLoadAction),
+        'goto' : SimpleActionClient(name+"/BebopMoveBaseAction", BebopMoveBaseAction),
+        'takeoff' : SimpleActionClient(name+"/BebopTakeOffAction", BebopTakeOffAction),
+        'unload' : SimpleActionClient(name+"/BebopUnloadAction", BebopUnloadAction),
+        'follow' : SimpleActionClient(name+"/BebopFollowAction", BebopFollowAction),
     }
 
 class Coordinator:
@@ -116,9 +116,12 @@ class Coordinator:
         # Set up Publisher
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
 
-        # TODO: Populate clients with the world agents
-        self.clients['bot0'] = TurtleClient('bot0')
-        self.clients['drone0'] = DroneClient('drone0')
+        for agent in rospy.get_param('/available_drones'):
+          print("Adding drone: {}".format(agent))
+          self.clients[agent] = DroneClient(agent)
+        for agent in rospy.get_param('/available_turtlebots'):
+          print("Adding turtlebot: {}".format(agent))
+          self.clients[agent] = TurtleClient(agent)
 
         rospy.loginfo('* Coordinator is waiting for action clients')
         for k in self.clients.keys():
@@ -190,72 +193,47 @@ class Coordinator:
 
     def action_takeoff(self, action):
         rospy.loginfo('/coordinator/action_takeoff for %s', action.agent)
-
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
-
-        ac = self.clients[action.agent].actions['bebop_takeoff_ac']
-
+        ac = self.clients[action.agent].actions['takeoff']
         ac.send_goal(BebopTakeOffGoal())
         return ac
-        #ac.wait_for_result()
-        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_land(self, action):
         rospy.loginfo('/coordinator/action_land for %s', action.agent)
-
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
-
-        ac = self.clients[action.agent].actions['bebop_land_ac']
-
+        ac = self.clients[action.agent].actions['land']
         ac.send_goal(BebopLandGoal())
         return ac
-        #ac.wait_for_result()
-        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_load(self, action):
         rospy.loginfo('/coordinator/action_load for %s', action.agent)
-
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
-
-        ac = self.clients[action.agent].actions['bebop_load_ac']
-
+        ac = self.clients[action.agent].actions['load']
         ac.send_goal(BebopLoadGoal())
         return ac
-        #ac.wait_for_result()
-        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_unload(self, action):
         rospy.loginfo('/coordinator/action_unload for %s', action.agent)
-
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
-
-        ac = self.clients[action.agent].actions['bebop_unload_ac']
-
+        ac = self.clients[action.agent].actions['unload']
         ac.send_goal(BebopUnloadGoal())
         return ac
-        #ac.wait_for_result()
-        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_follow(self, action):
         rospy.loginfo('/coordinator/action_follow for %s', action.agent)
-
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
-
-        ac = self.clients[action.agent].actions['bebop_follow_ac']
-
+        ac = self.clients[action.agent].actions['follow']
         ac.send_goal(BebopFollowGoal())
         return ac
-        #ac.wait_for_result()
-        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_goto(self, action):
@@ -268,10 +246,10 @@ class Coordinator:
         ac = None
         if agent in rospy.get_param('/available_drones'):
             goal = BebopMoveBaseGoal()
-            ac = self.clients[action.agent].actions['bebop_move_ac']
+            ac = self.clients[action.agent].actions['goto']
         elif agent in rospy.get_param('/available_turtlebots'):
             goal = MoveBaseGoal()
-            ac = self.clients[agent].actions['turtle_move_ac']
+            ac = self.clients[agent].actions['goto']
         if ac == None:
             raise CoordinatorError("No action client exist for agent %s" % agent)
 
@@ -295,8 +273,6 @@ class Coordinator:
 
         ac.send_goal(goal)
         return ac
-        #ac.wait_for_result()
-        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def test_actions(self):
@@ -330,6 +306,4 @@ if __name__ == '__main__':
         print("usage: coordinator.py waypoint_file")
     else:
         coordinator = Coordinator(sys.argv[1])
-        #rospy.sleep(0.1)
-        #coordinator.test_actions()
         coordinator.spin()

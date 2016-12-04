@@ -13,8 +13,6 @@ roslaunch world simulator.launch >logs/simulator.log 2>&1 &
 PIDS+=($!);
 sleep ${DELAY};
 
-rosparam set /available_drones ["drone"]
-rosparam set /available_turtlebots ["turtle"]
 
 if [ ! $NOBOT ];
 then
@@ -31,8 +29,6 @@ then
   roslaunch world ardrone_sim.launch >logs/drone.log 2>&1 &
   PIDS+=($!);
   sleep ${DELAY};
-  DRONESIM= rosrun bebop_controller BebopActionServer.py > logs/dronecontroller.log 2>&1 &
-  PIDS+=($!);
 fi;
 
 echo "Add map"
