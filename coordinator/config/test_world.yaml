@@ -8,7 +8,7 @@ objects:
     - wp3
   drone:
     - drone0
-#    - drone1
+    - drone1
   turtlebot:
     - bot0
 #    - bot1
@@ -46,7 +46,7 @@ waypoints:
     y: -2
   wp2:
     x: 3
-    y: 3
+    y: -2
   wp3:
-    x: 4
-    y: 4
+    x: 3
+    y: 1
