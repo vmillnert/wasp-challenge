@@ -56,6 +56,8 @@ class Action:
 
 class Coordinator:
     def __init__(self, wp_file):
+        self.clients = {}
+
         rospy.init_node('coordinator', anonymous=True, log_level=rospy.INFO)
 
         rospy.loginfo('/coordinator/__init__/ - Using waypoints from %s', wp_file)
@@ -64,29 +66,34 @@ class Coordinator:
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
 
         #Interface to Turtlebot
-        self.turtle_move_ac = SimpleActionClient("move_base", MoveBaseAction)
+        self.clients['turtle_move_ac'] = SimpleActionClient("move_base", MoveBaseAction)
 
         #Interface to Bebop
-        self.bebop_land_ac = SimpleActionClient("BebopLandAction", BebopLandAction)
-        self.bebop_load_ac = SimpleActionClient("BebopLoadAction", BebopLoadAction)
-        self.bebop_move_ac = SimpleActionClient("BebopMoveBaseAction", BebopMoveBaseAction)
-        self.bebop_takeoff_ac = SimpleActionClient("BebopTakeOffAction", BebopTakeOffAction)
-        self.bebop_unload_ac = SimpleActionClient("BebopUnloadAction", BebopUnloadAction)
-        self.bebop_follow_ac = SimpleActionClient("BebopFollowAction", BebopFollowAction)
+        self.clients['bebop_land_ac'] = SimpleActionClient("BebopLandAction", BebopLandAction)
+        self.clients['bebop_load_ac'] = SimpleActionClient("BebopLoadAction", BebopLoadAction)
+        self.clients['bebop_move_ac'] = SimpleActionClient("BebopMoveBaseAction", BebopMoveBaseAction)
+        self.clients['bebop_takeoff_ac'] = SimpleActionClient("BebopTakeOffAction", BebopTakeOffAction)
+        self.clients['bebop_unload_ac'] = SimpleActionClient("BebopUnloadAction", BebopUnloadAction)
+        self.clients['bebop_follow_ac'] = SimpleActionClient("BebopFollowAction", BebopFollowAction)
+
+        rospy.loginfo('* Coordinator is waiting for action clients')
+        for k in self.clients.keys():
+          self.clients[k].wait_for_server()
+
+        # Wait for WorldState before accepting any actions
+        rospy.loginfo("* Coordinator is waiting for world state update handler")
+        waypoint_srv_name = 'world_state/get_waypoint_position'
+        rospy.wait_for_service(waypoint_srv_name)
+        self.get_waypoint_position = rospy.ServiceProxy(waypoint_srv_name, WaypointPosition)
+        srv_name = 'world_state/action_finished'
+        rospy.wait_for_service(srv_name)
+        self.action_finished_update = rospy.ServiceProxy(srv_name, ActionFinished)
 
         self.coordinate_frame = rospy.get_param("~coordinate_frame", "map")
 
         # Interface to ROSplan
         rospy.Subscriber("/kcl_rosplan/action_dispatch", ActionDispatch, self.action_dispatch_callback)
 
-        # Interface to WorldState
-        waypoint_srv_name = 'world_state/get_waypoint_position'
-        rospy.wait_for_service(waypoint_srv_name)
-        self.get_waypoint_position = rospy.ServiceProxy(waypoint_srv_name, WaypointPosition)
-
-        srv_name = 'world_state/action_finished'
-        rospy.wait_for_service(srv_name)
-        self.action_finished_update = rospy.ServiceProxy(srv_name, ActionFinished)
 
     def action_dispatch_callback(self, msg):
         # Check Action type and call correct functions.
@@ -135,7 +142,7 @@ class Coordinator:
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.bebop_takeoff_ac
+        ac = self.clients['bebop_takeoff_ac']
 
         ac.send_goal(BebopTakeOffGoal())
         ac.wait_for_result()
@@ -149,7 +156,7 @@ class Coordinator:
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.bebop_land_ac
+        ac = self.clients['bebop_land_ac']
 
         ac.send_goal(BebopLandGoal())
         ac.wait_for_result()
@@ -163,7 +170,7 @@ class Coordinator:
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.bebop_load_ac
+        ac = self.clients['bebop_load_ac']
 
         ac.send_goal(BebopLoadGoal())
         ac.wait_for_result()
@@ -177,7 +184,7 @@ class Coordinator:
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.bebop_unload_ac
+        ac = self.clients['bebop_unload_ac']
 
         ac.send_goal(BebopUnloadGoal())
         ac.wait_for_result()
@@ -191,7 +198,7 @@ class Coordinator:
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.bebop_follow_ac
+        ac = self.clients['bebop_follow_ac']
 
         ac.send_goal(BebopFollowGoal())
         ac.wait_for_result()
@@ -209,10 +216,10 @@ class Coordinator:
         ac = None
         if obj in rospy.get_param('/available_drones'):
             goal = BebopMoveBaseGoal()
-            ac = self.bebop_move_ac
+            ac = self.clients['bebop_move_ac']
         elif obj in rospy.get_param('/available_turtlebots'):
             goal = MoveBaseGoal()
-            ac = self.turtle_move_ac
+            ac = self.clients['turtle_move_ac']
         if ac == None:
             raise CoordinatorError("No action client exist for obj %s" % obj)
 
