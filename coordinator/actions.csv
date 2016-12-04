@@ -1,9 +1,14 @@
-takeoff, drone
-wait
+takeoff, drone0
 goto, drone0, wp0
 goto, bot0, wp0
 wait
+goto, bot0, depo
 goto, drone0, wp1
 land, drone0
+takeoff, drone0
+goto, drone0, wp0
+land, drone0
+takeoff, drone0
+goto, drone0, depo
 wait
-goto, bot0, depo
+land, drone0

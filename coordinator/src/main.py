@@ -13,6 +13,7 @@ from diagnostic_msgs.msg import KeyValue
 from bebop_controller.msg import *
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from coordinator.srv import *
+from threading import RLock
 
 
 class ActionName:
@@ -39,20 +40,70 @@ class Action:
 
         self.parameters = action_dispatch_msg.parameters
 
-        self.obj = None
+        self.agent = None
         self.wp = None
 
         for p in self.parameters:
             if p.key == "agent" or p.key == "drone":
-                self.obj = p.value
+                self.agent = p.value
             if p.key == "to":
                 self.wp = p.value
 
-        if self.obj == None:
-            raise CoordinatorError("No key obj in action dispatch parameter")
+        if self.agent == None:
+            raise CoordinatorError("No key agent in action dispatch parameter")
         if self.wp == None and self.name == ActionName.goto:
             raise CoordinatorError("No key wp in action dispatch parameter")
 
+class Client:
+  def __init__(self, name):
+    self.name = name          # Name of the agent
+    self.actions = {}         # Action client instances
+    self.action = False       # Ongoing action
+    self.ac = False           # Action client for the ongoing action
+    self.queue = []           # Queued actions
+    self._lock = RLock()      # Thread lock
+
+  def wait_for(self):
+    for k in self.actions.keys():
+      self.actions[k].wait_for_server()
+
+  def is_idle(self):
+    return self.action == False
+
+  def set_action(self, action):
+    self.action = action
+
+  def queue_action(self, action):
+    self.queue.append(action)
+
+  def lock(self):
+    self._lock.acquire()
+
+  def unlock(self):
+    self._lock.release()
+
+  def read_queue(self):
+    if len(self.queue) == 0:
+      return False
+    return self.queue.pop(0)
+
+
+class TurtleClient(Client):
+  def __init__(self, name):
+    Client.__init__(self, name)
+    self.actions = { 'turtle_move_ac': SimpleActionClient("move_base", MoveBaseAction) }
+
+class DroneClient(Client):
+  def __init__(self, name):
+    Client.__init__(self, name)
+    self.actions = {
+        'bebop_land_ac' : SimpleActionClient("BebopLandAction", BebopLandAction),
+        'bebop_load_ac' : SimpleActionClient("BebopLoadAction", BebopLoadAction),
+        'bebop_move_ac' : SimpleActionClient("BebopMoveBaseAction", BebopMoveBaseAction),
+        'bebop_takeoff_ac' : SimpleActionClient("BebopTakeOffAction", BebopTakeOffAction),
+        'bebop_unload_ac' : SimpleActionClient("BebopUnloadAction", BebopUnloadAction),
+        'bebop_follow_ac' : SimpleActionClient("BebopFollowAction", BebopFollowAction),
+    }
 
 class Coordinator:
     def __init__(self, wp_file):
@@ -65,20 +116,13 @@ class Coordinator:
         # Set up Publisher
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
 
-        #Interface to Turtlebot
-        self.clients['turtle_move_ac'] = SimpleActionClient("move_base", MoveBaseAction)
-
-        #Interface to Bebop
-        self.clients['bebop_land_ac'] = SimpleActionClient("BebopLandAction", BebopLandAction)
-        self.clients['bebop_load_ac'] = SimpleActionClient("BebopLoadAction", BebopLoadAction)
-        self.clients['bebop_move_ac'] = SimpleActionClient("BebopMoveBaseAction", BebopMoveBaseAction)
-        self.clients['bebop_takeoff_ac'] = SimpleActionClient("BebopTakeOffAction", BebopTakeOffAction)
-        self.clients['bebop_unload_ac'] = SimpleActionClient("BebopUnloadAction", BebopUnloadAction)
-        self.clients['bebop_follow_ac'] = SimpleActionClient("BebopFollowAction", BebopFollowAction)
+        # TODO: Populate clients with the world agents
+        self.clients['bot0'] = TurtleClient('bot0')
+        self.clients['drone0'] = DroneClient('drone0')
 
         rospy.loginfo('* Coordinator is waiting for action clients')
         for k in self.clients.keys():
-          self.clients[k].wait_for_server()
+          self.clients[k].wait_for()
 
         # Wait for WorldState before accepting any actions
         rospy.loginfo("* Coordinator is waiting for world state update handler")
@@ -98,29 +142,37 @@ class Coordinator:
     def action_dispatch_callback(self, msg):
         # Check Action type and call correct functions.
         action = Action(msg)
-        rospy.loginfo('/coordinator/action_dispatch_callback obj "%s", action "%s"', action.obj, action.name)
+        client = self.clients[action.agent]
+        client.lock()
+        rospy.loginfo('/coordinator/action_dispatch_callback agent "%s", action "%s"', action.agent, action.name)
 
-        # Shared actions between action feeder and planner
-        if (msg.name == 'goto'):
-            self.action_goto(action)
-        elif (msg.name == 'takeoff'):
-            self.action_takeoff(action)
-        elif (msg.name == 'land'):
-            self.action_land(action)
-        elif (msg.name == 'load'):
-            self.action_load(action)
-        elif (msg.name == 'unload'):
-            self.action_unload(action)
-        elif (msg.name == 'follow'):
-            self.action_follow(action)
-        #Actions only defined by planner
-        elif (msg.name == 'pick-up'):
-            self.action_load(action)
-        elif (msg.name == 'hand-over'):
-            self.action_load(action)
+        if not client.is_idle():
+          rospy.loginfo('Agent "%s" is occupied, action queued', action.agent)
+          client.queue_action(msg)
         else:
-            rospy.loginfo("No action called %s for obj %s", msg.name, msg.obj)
-
+          client.set_action(action)
+          # Shared actions between action feeder and planner
+          if (msg.name == 'goto'):
+            client.ac = self.action_goto(action)
+          elif (msg.name == 'takeoff'):
+            client.ac = self.action_takeoff(action)
+          elif (msg.name == 'land'):
+            client.ac = self.action_land(action)
+          elif (msg.name == 'load'):
+            client.ac = self.action_load(action)
+          elif (msg.name == 'unload'):
+            client.ac = self.action_unload(action)
+          elif (msg.name == 'follow'):
+            client.ac = self.action_follow(action)
+          #Actions only defined by planner
+          elif (msg.name == 'pick-up'):
+            client.ac = self.action_load(action)
+          elif (msg.name == 'hand-over'):
+            client.ac = self.action_load(action)
+          else:
+            rospy.loginfo("No action called %s for agent %s", msg.name, msg.agent)
+            client.set_action(False)
+        client.unlock()
 
     def _action_feedback_from_state(self, action, state):
         success = (state == GoalStatus.SUCCEEDED)
@@ -137,91 +189,91 @@ class Coordinator:
 
 
     def action_takeoff(self, action):
-        rospy.loginfo('/coordinator/action_takeoff for %s', action.obj)
+        rospy.loginfo('/coordinator/action_takeoff for %s', action.agent)
 
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.clients['bebop_takeoff_ac']
+        ac = self.clients[action.agent].actions['bebop_takeoff_ac']
 
         ac.send_goal(BebopTakeOffGoal())
-        ac.wait_for_result()
-
-        self._action_feedback_from_state(action, ac.get_state())
+        return ac
+        #ac.wait_for_result()
+        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_land(self, action):
-        rospy.loginfo('/coordinator/action_land for %s', action.obj)
+        rospy.loginfo('/coordinator/action_land for %s', action.agent)
 
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.clients['bebop_land_ac']
+        ac = self.clients[action.agent].actions['bebop_land_ac']
 
         ac.send_goal(BebopLandGoal())
-        ac.wait_for_result()
-
-        self._action_feedback_from_state(action, ac.get_state())
+        return ac
+        #ac.wait_for_result()
+        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_load(self, action):
-        rospy.loginfo('/coordinator/action_load for %s', action.obj)
+        rospy.loginfo('/coordinator/action_load for %s', action.agent)
 
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.clients['bebop_load_ac']
+        ac = self.clients[action.agent].actions['bebop_load_ac']
 
         ac.send_goal(BebopLoadGoal())
-        ac.wait_for_result()
-
-        self._action_feedback_from_state(action, ac.get_state())
+        return ac
+        #ac.wait_for_result()
+        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_unload(self, action):
-        rospy.loginfo('/coordinator/action_unload for %s', action.obj)
+        rospy.loginfo('/coordinator/action_unload for %s', action.agent)
 
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.clients['bebop_unload_ac']
+        ac = self.clients[action.agent].actions['bebop_unload_ac']
 
         ac.send_goal(BebopUnloadGoal())
-        ac.wait_for_result()
-
-        self._action_feedback_from_state(action, ac.get_state())
+        return ac
+        #ac.wait_for_result()
+        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_follow(self, action):
-        rospy.loginfo('/coordinator/action_follow for %s', action.obj)
+        rospy.loginfo('/coordinator/action_follow for %s', action.agent)
 
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
 
-        ac = self.clients['bebop_follow_ac']
+        ac = self.clients[action.agent].actions['bebop_follow_ac']
 
         ac.send_goal(BebopFollowGoal())
-        ac.wait_for_result()
-
-        self._action_feedback_from_state(action, ac.get_state())
+        return ac
+        #ac.wait_for_result()
+        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def action_goto(self, action):
-    	rospy.loginfo('/coordinator/action_goto for %s', action.obj)
+    	rospy.loginfo('/coordinator/action_goto for %s', action.agent)
         parameters = action.parameters
         action_id = action.action_id
-        obj = action.obj
+        agent = action.agent
         wp = action.wp
 
         ac = None
-        if obj in rospy.get_param('/available_drones'):
+        if agent in rospy.get_param('/available_drones'):
             goal = BebopMoveBaseGoal()
-            ac = self.clients['bebop_move_ac']
-        elif obj in rospy.get_param('/available_turtlebots'):
+            ac = self.clients[action.agent].actions['bebop_move_ac']
+        elif agent in rospy.get_param('/available_turtlebots'):
             goal = MoveBaseGoal()
-            ac = self.clients['turtle_move_ac']
+            ac = self.clients[agent].actions['turtle_move_ac']
         if ac == None:
-            raise CoordinatorError("No action client exist for obj %s" % obj)
+            raise CoordinatorError("No action client exist for agent %s" % agent)
 
         if not ac.wait_for_server(timeout=rospy.Duration(10)):
             rospy.loginfo("server timeout")
@@ -242,15 +294,15 @@ class Coordinator:
         self.feedback_pub.publish(feedback_msg)
 
         ac.send_goal(goal)
-        ac.wait_for_result()
-
-        self._action_feedback_from_state(action, ac.get_state())
+        return ac
+        #ac.wait_for_result()
+        #self._action_feedback_from_state(action, ac.get_state())
 
 
     def test_actions(self):
         dispatch_msg = ActionDispatch()
         dispatch_msg.name = "goto"
-        dispatch_msg.parameters = [KeyValue('obj','turtle'), KeyValue('wp','wp1')]
+        dispatch_msg.parameters = [KeyValue('agent','turtle'), KeyValue('wp','wp1')]
         tmp_pub = rospy.Publisher("/kcl_rosplan/action_dispatch", ActionDispatch, queue_size=1)
         rospy.sleep(0.1)
         tmp_pub.publish(dispatch_msg)
@@ -258,8 +310,20 @@ class Coordinator:
 
 
     def spin(self):
-        rospy.spin()
-
+      r = rospy.Rate(10) # Hz
+      while not rospy.is_shutdown():
+        for c in self.clients.values():
+          c.lock()
+          if not c.is_idle():
+            s = c.ac.get_state()
+            if not s in [GoalStatus.PENDING, GoalStatus.ACTIVE]:
+              self._action_feedback_from_state(c.action, s)
+              c.set_action(False)
+              msg = c.read_queue()
+              if msg:
+                self.action_dispatch_callback(msg)
+          c.unlock()
+        r.sleep()
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
