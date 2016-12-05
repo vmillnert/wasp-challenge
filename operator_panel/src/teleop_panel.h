@@ -37,6 +37,9 @@
 
 class QLineEdit;
 
+class QPushButton;
+
+
 namespace operator_panel
 {
 
@@ -94,6 +97,8 @@ protected Q_SLOTS:
   // setTopic() with the result.
   void updateTopic();
 
+  void sendStart();
+  void sendStop();
   // Then we finish up with protected member variables.
 protected:
   // The control-area widget which turns mouse events into command
@@ -102,6 +107,12 @@ protected:
 
   // One-line text editor for entering the outgoing ROS topic name.
   QLineEdit* output_topic_editor_;
+
+  // Start button  
+  QPushButton* start_button_;
+
+  // Stop button  
+  QPushButton* stop_button_;
 
   // The current name of the output topic.
   QString output_topic_;

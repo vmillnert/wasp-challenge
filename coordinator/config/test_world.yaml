@@ -2,13 +2,14 @@
 objects: 
   waypoint: 
     - depo
-    - wp0
-    - wp1
+    - wp00
+    - wp01
+    - wp10
+    - wp11
     - wp2
     - wp3
   drone:
-    - drone0
-    - drone1
+    - drone
   turtlebot:
     - bot0
 #    - bot1
@@ -23,12 +24,13 @@ objects:
 # List of where the objects are in the world, on the form: 'waypoint': [object names]
 at:
   depo: *boxes
-  wp0:
+  wp00:
     - person0
   wp1:
     - person1
   wp2:
     - drone0
+    - bot0
   wp3:
     - drone1
 
@@ -38,15 +40,21 @@ waypoints:
   depo: 
     x: 0
     y: 0
-  wp0:
+  wp00:
     x: 1
     y: 1
-  wp1:
+  wp01:
+    x: 2
+    y: 1
+  wp10:
     x: -1
-    y: -2
+    y: -1
+  wp11:
+    x: 0
+    y: -1
   wp2:
     x: 3
     y: -2
   wp3:
-    x: 3
-    y: 1
+    x: 2
+    y: 2

@@ -6,6 +6,7 @@ import rospy
 import roslib
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
+import thread
     
 
 # Fill background
@@ -64,17 +65,11 @@ speedBindings={
 	      }
 
 
-
-
-
-if __name__ == '__main__':
-
+def run():
     # Start the publisher
-    pub = rospy.Publisher('/bebop_teleop/cmd_vel', Twist, queue_size=1)
-    command_pub = rospy.Publisher('/bebop_teleop/command', String, queue_size=10)
-    
-    rospy.init_node('teleop_twist_keyboard')
-    
+    pub = rospy.Publisher('bebop_teleop/cmd_vel', Twist, queue_size=1)
+    command_pub = rospy.Publisher('bebop_teleop/command', String, queue_size=10)
+
     pygame.init()
 
     size = width, height = 500, 600
@@ -216,3 +211,9 @@ if __name__ == '__main__':
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
         pub.publish(twist)
         
+
+
+if __name__ == '__main__':
+    rospy.init_node('teleop_twist_keyboard')
+    thread.start_new_thread(run, ())
+    rospy.spin()

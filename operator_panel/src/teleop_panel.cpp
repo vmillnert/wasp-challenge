@@ -28,9 +28,11 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <QPainter>
 #include <QLineEdit>
+#include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -40,7 +42,6 @@
 
 #include "drive_widget.h"
 #include "teleop_panel.h"
-
 namespace operator_panel
 {
 
@@ -71,10 +72,18 @@ WaspPanel::WaspPanel( QWidget* parent )
   // Then create the control widget.
   drive_widget_ = new DriveWidget;
 
+  // Add start button
+  start_button_ = new QPushButton("Start");
+  stop_button_ = new QPushButton("Stop");
+
   // Lay out the topic field above the control widget.
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addLayout( topic_layout );
   layout->addWidget( drive_widget_ );
+  layout->addWidget( start_button_ );
+  layout->addWidget( stop_button_ );
+
+
   setLayout( layout );
 
   // Create a timer for sending the output.  Motor controllers want to
@@ -92,6 +101,8 @@ WaspPanel::WaspPanel( QWidget* parent )
   connect( drive_widget_, SIGNAL( outputVelocity( float, float )), this, SLOT( setVel( float, float )));
   connect( output_topic_editor_, SIGNAL( editingFinished() ), this, SLOT( updateTopic() ));
   connect( output_timer, SIGNAL( timeout() ), this, SLOT( sendVel() ));
+  connect( start_button_, SIGNAL( clicked()), this, SLOT( sendStart() ));
+  connect( stop_button_, SIGNAL( clicked() ), this, SLOT( sendStop() ));
 
   // Start the timer.
   output_timer->start( 100 );
@@ -176,6 +187,14 @@ void WaspPanel::save( rviz::Config config ) const
 {
   rviz::Panel::save( config );
   config.mapSetValue( "Topic", output_topic_ );
+}
+
+void WaspPanel::sendStart()
+{
+}
+
+void WaspPanel::sendStop()
+{
 }
 
 // Load all configuration data for this panel from the given Config object.

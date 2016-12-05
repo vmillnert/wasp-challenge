@@ -24,8 +24,20 @@
 
 (:functions (move-duration ?from ?to - waypoint) - number)
 
+(:durative-action fly
+  :parameters (?agent - drone ?from ?to - waypoint)
+  :duration (= ?duration (move-duration ?from ?to))
+  :condition (and (over all (empty ?to))
+                  (over all (empty ?agent))
+                  (at start (at ?agent ?from)))
+  :effect (and (at start (not (at ?agent ?from)))
+               (at end (at ?agent ?to))
+               (at start (empty ?from))
+               (at end (not (empty ?to))))
+  )
+
 (:durative-action goto
-  :parameters (?agent - agent ?from ?to - waypoint)
+  :parameters (?agent - turtlebot ?from ?to - waypoint)
   :duration (= ?duration (move-duration ?from ?to))
   :condition (and (over all (empty ?to))
                   (at start (at ?agent ?from)))
@@ -34,6 +46,7 @@
                (at start (empty ?from))
                (at end (not (empty ?to))))
   )
+
 
 ;only drone can do pick-up, from a known waypoint
 (:durative-action pick-up
@@ -48,10 +61,10 @@
                (at end (not (empty ?drone))))
   )
 
-(:durative-action hand-over
+(:durative-action hand-over-drone2bot
   :parameters (?drone - drone ?turtlebot - turtlebot ?box - box ?air - airwaypoint ?ground - waypoint)
   :duration (= ?duration 1)
-  :condition (and (at start (over ?air ?ground))
+  :condition (and (over all (over ?air ?ground))
                   (over all (at ?drone ?air))
                   (over all (at ?turtlebot ?ground))
                   (at start (carrying ?drone ?box))
@@ -59,14 +72,27 @@
   :effect (and (at end (not (carrying ?drone ?box)))
                (at end (empty ?drone))
                (at end (carrying ?turtlebot ?box))
-               (at start (not (empty ?turtlebot))))
+               (at end (not (empty ?turtlebot))))
+  )
+
+(:durative-action hand-over-bot2drone
+  :parameters (?drone - drone ?turtlebot - turtlebot ?box - box ?air - airwaypoint ?ground - waypoint)
+  :duration (= ?duration 1)
+  :condition (and (over all (over ?air ?ground))
+                  (over all (at ?drone ?air))
+                  (over all (at ?turtlebot ?ground))
+                  (at start (carrying ?turtlebot ?box))
+                  (at start (empty ?drone)))
+  :effect (and (at end (not (carrying ?turtlebot ?box)))
+               (at end (empty ?turtlebot))
+               (at end (carrying ?drone ?box))
+               (at end (not (empty ?drone))))
   )
 
 (:durative-action unload
   :parameters (?drone - drone ?box - box ?air - airwaypoint ?ground - waypoint ?person - person)
   :duration (= ?duration 1)
   :condition (and (over all (over ?air ?ground))
-                  (over all (empty ?ground))
                   (at start (carrying ?drone ?box))
                   (over all (at ?drone ?air))
                   (over all (at ?person ?ground)))
