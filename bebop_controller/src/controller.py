@@ -259,7 +259,7 @@ class ARDroneSimController(Controller):
     location = (self.pose.position.x,self.pose.position.y,self.pose.position.z)
     for i in range(0,2): # x,y only
       e = target[i]-location[i]
-      v = min(1, 100*e*1.0/self.rate)
+      v = max(-1, min(1, 100*e*1.0/self.rate))
       self.velo[i] = v
       self.error[i] = e
     self.send_velocity(self.velo[0], self.velo[1], self.velo[2])
