@@ -116,6 +116,15 @@ class Coordinator:
         # Set up Publisher
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
 
+        # Wait for WorldState - it populates the list of agents and must be available before accepting any actions
+        rospy.loginfo("* Coordinator is waiting for world state update handler")
+        waypoint_srv_name = 'world_state/get_waypoint_position'
+        rospy.wait_for_service(waypoint_srv_name)
+        self.get_waypoint_position = rospy.ServiceProxy(waypoint_srv_name, WaypointPosition)
+        srv_name = 'world_state/action_finished'
+        rospy.wait_for_service(srv_name)
+        self.action_finished_update = rospy.ServiceProxy(srv_name, ActionFinished)
+
         for agent in rospy.get_param('/available_drones'):
           print("Adding drone: {}".format(agent))
           self.clients[agent] = DroneClient(agent)
@@ -126,15 +135,6 @@ class Coordinator:
         rospy.loginfo('* Coordinator is waiting for action clients')
         for k in self.clients.keys():
           self.clients[k].wait_for()
-
-        # Wait for WorldState before accepting any actions
-        rospy.loginfo("* Coordinator is waiting for world state update handler")
-        waypoint_srv_name = 'world_state/get_waypoint_position'
-        rospy.wait_for_service(waypoint_srv_name)
-        self.get_waypoint_position = rospy.ServiceProxy(waypoint_srv_name, WaypointPosition)
-        srv_name = 'world_state/action_finished'
-        rospy.wait_for_service(srv_name)
-        self.action_finished_update = rospy.ServiceProxy(srv_name, ActionFinished)
 
         self.coordinate_frame = rospy.get_param("~coordinate_frame", "map")
 
