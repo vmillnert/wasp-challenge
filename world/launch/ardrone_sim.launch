@@ -14,11 +14,7 @@
     </node>
 
     <node pkg="tf" type="static_transform_publisher" name="map_to_drone0" args="0 0 0 0 0 0 map drone0/base_link 100"/>
-
-    <node pkg="bebop_controller" type="BebopActionServer.py" name="drone0_action_server" output="screen">
-      <env name="DRONESIM" value="1"/>
-    </node>
-  </group>
+ </group>
 
   <group ns="drone1">
     <param name="tf_prefix" value="drone1"/>
@@ -35,10 +31,6 @@
     </node>
 
     <node pkg="tf" type="static_transform_publisher" name="map_to_drone1" args="0 0 0 0 0 0 map drone1/base_link 100"/>
-
-    <node pkg="bebop_controller" type="BebopActionServer.py" name="drone1_action_server" output="screen">
-      <env name="DRONESIM" value="1"/>
-    </node>
   </group>
 
 </launch>

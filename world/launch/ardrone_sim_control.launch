@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <group ns="drone0">
+    <node pkg="bebop_controller" type="BebopActionServer.py" name="drone0_action_server" output="screen">
+      <env name="DRONESIM" value="1"/>
+    </node>
+  </group>
+
+  <group ns="drone1">
+    <node pkg="bebop_controller" type="BebopActionServer.py" name="drone1_action_server" output="screen">
+      <env name="DRONESIM" value="1"/>
+    </node>
+  </group>
+</launch>
