@@ -144,6 +144,17 @@ def norm2d(p):
   y = p.position.y
   return math.sqrt(x*x+y*y)
 
+# 2-norm of 3d coordinate
+def norm3d(p):
+  x = p.position.x
+  y = p.position.y
+  z = p.position.z
+  return math.sqrt(x*x+y*y+z*z)
+
+# Maximum abs of x,y,z
+def maxabs3d(p):
+  return max(max(abs(p.position.x), abs(p.position.y)), abs(p.position.z))
+
 # Get the yaw of a pose
 def getyaw(p):
   q = (p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w)
@@ -203,7 +214,6 @@ class ARDroneSimController(Controller):
     self.worldpose = Pose() # In the gazebo world
     self.pose = Pose()      # On the map
     self.target = Pose()
-    self.target.position.z = 1.5
     self.velo = [0.0, 0.0, 0.0] # TODO: Listen to Navdata
     self.navdata = False
 
@@ -247,6 +257,22 @@ class ARDroneSimController(Controller):
     s = self.navdata.state
     self.lock.release();
     return s == ARDroneState['INITED'] or s == ARDroneState['LANDED']
+
+  def printstate(self):
+    print("{} is {} [{}]\n  pose [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f}) Y({:4.3f})]\n  velocity ({:3.1f},{:3.1f},{:3.1f} [S({:3.1f},{:3.1f},{:3.1f})])".format(self._name,
+      ARDroneState.keys()[ARDroneState.values().index(self.navdata.state)], self._control_mode,
+      self.pose.position.x, self.pose.position.y, self.pose.position.z, 
+      self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w,
+      getyaw(self.pose),
+      self.navdata.vx, self.navdata.vy, self.navdata.vz,
+      self.velo[0], self.velo[1], self.velo[2]))
+    if self.action == Action.GOTO:
+      print("  target [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f}) Y({:4.3f})]".format(
+        self.target.position.x, self.target.position.y, self.target.position.z, 
+        self.target.orientation.x, self.target.orientation.y, self.target.orientation.z, self.target.orientation.w,
+        getyaw(self.target)))
+    if not self.action == Action.NONE and self.get_action_status() == ActionStatus.STARTED:
+      print("  acting")
  
   def run(self):
     # TODO: Move into base class
@@ -259,6 +285,8 @@ class ARDroneSimController(Controller):
       self.lock.release()
       loop_rate.sleep()
       self.lock.acquire()
+    self.update_pose()
+    self.target = deepcopy(self.pose)
     self.lock.release()
 
     # Init commands. Why is there velocity set even when zeroed?
@@ -270,21 +298,8 @@ class ARDroneSimController(Controller):
       self.lock.acquire()
       self.update_pose()
       printcounter += 1
-      if printcounter == self.rate:
-        print("{} is {} [{}]\n  pose [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f}) Y({:4.3f})]\n  velocity ({:3.1f},{:3.1f},{:3.1f} [S({:3.1f},{:3.1f},{:3.1f})])".format(self._name,
-          ARDroneState.keys()[ARDroneState.values().index(self.navdata.state)], self._control_mode,
-          self.pose.position.x, self.pose.position.y, self.pose.position.z, 
-          self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w,
-          getyaw(self.pose),
-          self.navdata.vx, self.navdata.vy, self.navdata.vz,
-          self.velo[0], self.velo[1], self.velo[2]))
-        if self.action == Action.GOTO:
-          print("  target [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f}) Y({:4.3f})]".format(
-            self.target.position.x, self.target.position.y, self.target.position.z, 
-            self.target.orientation.x, self.target.orientation.y, self.target.orientation.z, self.target.orientation.w,
-            getyaw(self.target)))
-        if not self.action == Action.NONE and self.get_action_status() == ActionStatus.STARTED:
-          print("  acting")
+      if printcounter == self.rate*5:
+        self.printstate()
         printcounter = 0
 
       if self._control_mode == 'manual':
@@ -305,12 +320,12 @@ class ARDroneSimController(Controller):
     if self.get_action_status() == ActionStatus.STARTED:
       if self.action == Action.TAKEOFF:
         if self.airborne():
-          self.set_action_status(ActionStatus.COMPLETED)
+          self.set_height(1.5) # Not done yet, rise to height 1.5 first
       elif self.action == Action.GOTO:
         e = subtract_pose(self.target, self.pose)
         ye = getyaw(self.target)-getyaw(self.pose)
 
-        position_good = norm2d(e) < 0.5
+        position_good = maxabs3d(e) < 0.2
         yaw_good = abs(ye) < 0.02
 
         velocity = (0,0,0)
@@ -325,10 +340,12 @@ class ARDroneSimController(Controller):
         self.send_movement(velocity, rotation)
 
         if position_good and yaw_good:
+          self.printstate()
           self.set_action_status(ActionStatus.COMPLETED)
 
       elif self.action == Action.LAND:
         if self.grounded():
+          self.printstate()
           self.set_action_status(ActionStatus.COMPLETED)
 
   def takeoff(self):
@@ -349,11 +366,17 @@ class ARDroneSimController(Controller):
   def set_yaw(self, yaw):
     self.lock.acquire()
     setyaw(self.target, yaw)
+    self.action = Action.GOTO
+    self.set_action_status(ActionStatus.STARTED)
+    self.printstate()
     self.lock.release()
 
   def set_height(self, height):
     self.lock.acquire()
-    self.target.position.z = goal.point.z
+    self.target.position.z = height
+    self.action = Action.GOTO
+    self.set_action_status(ActionStatus.STARTED)
+    self.printstate()
     self.lock.release()
 
   def set_goal(self, goal):
@@ -367,14 +390,14 @@ class ARDroneSimController(Controller):
     self.target.position.y = goal.point.y
 
     target_yaw = getyaw(self.target)
-    self.target.orientation = self.pose.orientation
+    self.target.orientation = deepcopy(self.pose.orientation)
     setyaw(self.target, target_yaw)
     
     self.lock.release()
 
   # Returns desired yaw rotation
   def control_rotation(self, yaw_err):
-    return 25*yaw_err/self.rate;
+    return 250*yaw_err/self.rate;
 
   # Returns desired velocities
   def control_speed(self, err):
