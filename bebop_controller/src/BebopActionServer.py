@@ -120,11 +120,15 @@ class BebopActionServer(object):
         self.handle_feedback(self.as_move)
 
     def mark_load_event(self, actionserver):
-        self.controller.set_height(1.0)
+        self.controller.set_yaw(0)
+        status, preempted = self.handle_feedback(actionserver, send_result = False)
+        self.controller.set_yaw(3)
+        self.controller.set_height(0.8)
         status, preempted = self.handle_feedback(actionserver, send_result = False)
 
         if status == ActionStatus.COMPLETED:
             self.controller.set_height(1.5)
+            self.controller.set_yaw(0)
             self.handle_feedback(actionserver, send_result = True)
         else:
             self.send_result(actionserver, status, preempted)
