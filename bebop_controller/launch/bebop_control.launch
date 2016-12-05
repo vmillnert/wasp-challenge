@@ -1,11 +1,10 @@
 <launch>
-  <param name="tf_prefix" value="hej"/>
-	<node
-	  name="bebop_controller" pkg="bebop_controller" type="controller.py"
-	  output="screen"
-	  />
-	<node
-	  name="bebop_teleop" pkg="bebop_controller" type="bebop_teleop.py"
-	  output="screen"
-	  />
+  <node
+      name="bebop" pkg="bebop_controller" type="controller.py"
+      output="screen"
+      />
+  <node
+      name="bebop_teleop" pkg="bebop_controller" type="teleop.py"
+      output="screen"
+      />
 </launch>

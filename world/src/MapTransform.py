@@ -42,14 +42,18 @@ def locatedCallback(tagref):
     rospy.loginfo('Request time: '+ str(tagref.pose.header.stamp))
     listener.waitForTransform(tagref.global_frame, tagref.tag_frame,
                               tagref.pose.header.stamp, rospy.Duration(2))
+    # CHANGE tagref.pose.header.stamp -> rospy.Time.now() ???
     (trans_gt, rot_gt) = listener.lookupTransform(tagref.global_frame,
-     tagref.tag_frame, tagref.pose.header.stamp)
+                                                  tagref.tag_frame, tagref.pose.header.stamp)
+    # CHANGE tagref.pose.header.stamp -> rospy.Time.now() ???
     mat_map = tf.transformations.concatenate_matrices(
         tf.transformations.translation_matrix(trans_gt),
         tf.transformations.quaternion_matrix(rot_gt))
 
     listener.waitForTransform(tagref.target_frame, tagref.pose.header.frame_id,
-     tagref.pose.header.stamp, rospy.Duration(0.5))
+                              tagref.pose.header.stamp, rospy.Duration(0.5))
+    # CHANGE tagref.pose.header.stamp -> rospy.Time.now() ???
+
     pstamped = listener.transformPose(tagref.target_frame, tagref.pose)
 
     mat_odom = tf.transformations.concatenate_matrices(
@@ -98,6 +102,7 @@ def locatedCallback(tagref):
     i = int(len(trans_norm)/2)
     
     transforms[key] = (tagref.global_frame, tagref.target_frame, trans_norm[i][1], rot_norm[i][1], tagref.pose.header.stamp)
+    # CHANGE tagref.pose.header.stamp -> rospy.Time.now() ???
     lock.release()
 
   except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
@@ -118,7 +123,8 @@ def broadcastThread():
     lock.acquire()
     for k,v in transforms.iteritems():
       rospy.loginfo
-      sendTransform(v[0], v[1], v[2], v[3], v[4])
+      # sendTransform(v[0], v[1], v[2], v[3], v[4])
+      sendTransform(v[0], v[1], v[2], v[3], rospy.Time.now())
     lock.release()
     rate.sleep()
 

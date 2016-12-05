@@ -277,8 +277,8 @@ class BebopController(Controller):
     _MAX_VEL = 0.4 # Maximum velocity for the drone in any one
                    # direction
 
-    _TOLERANCE = 0.2 # Tolerance for the Go-to-goal controller
-    _HEIGHT_TOL = 0.2 # tolerance for the height-controller
+    _TOLERANCE = 0.3 # Tolerance for the Go-to-goal controller
+    _HEIGHT_TOL = 0.3 # tolerance for the height-controller
     _YAW_TOL = 0.2 # Tolerance for the yaw-controller
     
     def __init__(self, name):
@@ -298,7 +298,6 @@ class BebopController(Controller):
         # goal PointStamped ('odom'-frame)
         # only x & y position
         self._goal_point = PointStamped() 
-
         # Flag to know whether the goal is reached or not
         self.goal_reached = False
 
@@ -329,7 +328,7 @@ class BebopController(Controller):
         # start the vellocetiy callback from 'bebop_teleop'
         rospy.Subscriber('/bebop_teleop/cmd_vel', Twist, self.teleop_velocity_callback)
 
-       # self.tfListener.waitForTransform(self._child_frame_id,
+        # self.tfListener.waitForTransform(self._child_frame_id,
         #                                 self._parent_frame_id,
         #                                 rospy.Time(0),
         #                                 rospy.Duration(5))
@@ -496,7 +495,10 @@ class BebopController(Controller):
         # return the x and y control-signals
         # return control.point.x, control.point.y
         # return control.vector.x, control.vector.y, control.vector.z
-        return control.pose.position.x, control.pose.position.y, control.pose.position.z, tf.transformations.euler_from_quaternion([control.pose.orientation.x,control.pose.orientation.y,control.pose.orientation.z,control.pose.orientation.w])[2]
+        return control.pose.position.x, control.pose.position.y, control.pose.position.z, tf.transformations.euler_from_quaternion([control.pose.orientation.x,
+                                                                                                                                    control.pose.orientation.y,
+                                                                                                                                    control.pose.orientation.z,
+                                                                                                                                    control.pose.orientation.w])[2]
 
 
     # Abort current action goal
@@ -561,7 +563,10 @@ class BebopController(Controller):
             x = deepcopy(self._my_pose.pose.position.x)
             y = deepcopy(self._my_pose.pose.position.y)
             z = deepcopy(self._my_pose.pose.position.z)
-            yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,self._my_pose.pose.orientation.y,self._my_pose.pose.orientation.z,self._my_pose.pose.orientation.w])[2])
+            yaw = deepcopy(tf.transformations.euler_from_quaternion([self._my_pose.pose.orientation.x,
+                                                                     self._my_pose.pose.orientation.y,
+                                                                     self._my_pose.pose.orientation.z,
+                                                                     self._my_pose.pose.orientation.w])[2])
             action_status = self.get_action_status()
 
             if self._control_mode == 'manual':
@@ -576,7 +581,7 @@ class BebopController(Controller):
                 # rospy.loginfo('%s: We are in manual mode' % self._name)
 
                 cmd_vel = deepcopy(self._teleop_vel)
-
+                
                 ######################################
                 # send control signal                #
                 self._cmd_vel_pub.publish(cmd_vel) #
@@ -625,11 +630,12 @@ class BebopController(Controller):
                     uy = self.limit(vy)
                     uz = self.limit(vz)
                     uyaw = self.limit(vyaw)
-
+                    uyaw = 0.0 # just to not have any jaw-control
                     # convert the control signal from 'odom'-frame to
                     # 'base_link'-frame
                     cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.linear.z, cmd_vel.angular.z = self.convert_control_signal(ux,uy,uz,uyaw)
 
+                    cmd_vel.angular.z = 0.0 # just to not have any jaw controller
                     ######################################
                     # send control signal                #
                     self._cmd_vel_pub.publish(cmd_vel) #
@@ -773,5 +779,6 @@ if __name__ == '__main__':
         c = BebopController(rospy.get_name())
         # start the controller
         c.run()
+
     except rospy.ROSInterruptException:
         print "Program interrupted before completion"
