@@ -161,6 +161,26 @@ def setyaw(p, yaw):
   p.orientation.z = q[2]
   p.orientation.w = q[3]
 
+# Translates and rotates a pose. The new pose is returned as (trans, rot)
+def transform_pose(p, trans, orient):
+  transmat = tf.transformations.concatenate_matrices(
+                tf.transformations.translation_matrix(trans),
+                tf.transformations.quaternion_matrix(orient))
+  me = tf.transformations.concatenate_matrices(
+          tf.transformations.translation_matrix((
+            p.position.x,
+            p.position.y,
+            p.position.z)),
+          tf.transformations.quaternion_matrix((
+            p.orientation.x,
+            p.orientation.y,
+            p.orientation.z,
+            p.orientation.w
+            )))
+  posmat = numpy.dot(transmat, me)
+  return (tf.transformations.translation_from_matrix(posmat),
+          tf.transformations.quaternion_from_matrix(posmat))
+
 class ARDroneSimController(Controller):
   def __init__(self, name):
     Controller.__init__(self, name)
@@ -180,10 +200,27 @@ class ARDroneSimController(Controller):
     self.pub_land = rospy.Publisher('ardrone/land', Empty, queue_size=10)
     self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10) # TODO!!! Namespace
 
-    self.pose = Pose()
+    self.worldpose = Pose() # In the gazebo world
+    self.pose = Pose()      # On the map
     self.target = Pose()
+    self.target.position.z = 1.5
     self.velo = [0.0, 0.0, 0.0] # TODO: Listen to Navdata
     self.navdata = False
+
+  # Transforms world position to map
+  def update_pose(self):
+    try:
+      (trans, orient) = self.tfListener.lookupTransform("map", "world", rospy.Time(0))
+      (t, o) = transform_pose(self.worldpose, trans, orient)
+      self.pose.position.x = t[0]
+      self.pose.position.y = t[1]
+      self.pose.position.z = t[2]
+      self.pose.orientation.x = o[0]
+      self.pose.orientation.y = o[1]
+      self.pose.orientation.z = o[2]
+      self.pose.orientation.w = o[3]
+    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+      print("EXCEPTION")
 
   def cb_navdata(self, data):
     self.lock.acquire();
@@ -194,7 +231,7 @@ class ARDroneSimController(Controller):
     try:
       i = data.name.index(self._name)
       self.lock.acquire();
-      self.pose = deepcopy(data.pose[i])
+      self.worldpose = deepcopy(data.pose[i])
       self.lock.release();
     except:
       pass
@@ -231,6 +268,7 @@ class ARDroneSimController(Controller):
    
     while not rospy.is_shutdown():
       self.lock.acquire()
+      self.update_pose()
       printcounter += 1
       if printcounter == self.rate:
         print("{} is {} [{}]\n  pose [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f}) Y({:4.3f})]\n  velocity ({:3.1f},{:3.1f},{:3.1f} [S({:3.1f},{:3.1f},{:3.1f})])".format(self._name,
@@ -313,15 +351,20 @@ class ARDroneSimController(Controller):
     setyaw(self.target, yaw)
     self.lock.release()
 
+  def set_height(self, height):
+    self.lock.acquire()
+    self.target.position.z = goal.point.z
+    self.lock.release()
+
   def set_goal(self, goal):
     if goal.header.frame_id != 'map':
       print("BAD FRAME!!!") # TODO Convert
     self.lock.acquire()
     self.action = Action.GOTO
     self.set_action_status(ActionStatus.STARTED)
+
     self.target.position.x = goal.point.x
     self.target.position.y = goal.point.y
-    self.target.position.z = goal.point.z
 
     target_yaw = getyaw(self.target)
     self.target.orientation = self.pose.orientation
@@ -336,7 +379,7 @@ class ARDroneSimController(Controller):
   # Returns desired velocities
   def control_speed(self, err):
     e = (err.position.x, err.position.y, err.position.z)
-    for i in range(0,2): # x,y only
+    for i in range(0,3): # x,y only
       v = max(-1, min(1, 100*e[i]/self.rate))
       self.velo[i] = v
     return (self.velo[0], self.velo[1], self.velo[2])

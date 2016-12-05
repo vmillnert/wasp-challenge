@@ -32,6 +32,7 @@ then
   then
     echo Add drone controllers
     roslaunch world ardrone_sim_control.launch >logs/dronecontrol.log 2>&1 &
+    PIDS+=($!);
   fi;
 fi;
 
@@ -43,6 +44,7 @@ if test $RVIZ -ne 0;
 then
   echo "RViz"
   roslaunch turtlebot_rviz_launchers view_navigation.launch >logs/rviz.log 2>&1 &
+  PIDS+=($!);
 fi;
 
 read -p "Press enter to exit";
