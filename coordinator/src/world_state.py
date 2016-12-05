@@ -58,6 +58,7 @@ class WorldState:
         self.waypoint_pos_service = rospy.Service('~get_waypoint_position', WaypointPosition, self.get_waypoint_position)
         self.replan_service = rospy.Service('~plan', Empty, self.start_planner)
         self.action_finished_service = rospy.Service('~action_finished', ActionFinished, self.action_finished_cb)
+        self.read_config_service = rospy.Service('~read_world_config', Empty, self.read_world_config_cb)
 
         # Variables for keeping track of the world
         self.objects = {}
@@ -70,6 +71,10 @@ class WorldState:
         self.read_world_config()
 
     
+    def read_world_config_cb(self, request):
+        self.read_world_config()
+        return EmptyResponse()
+
     def read_world_config(self):
         if self.world_config_file == None:
             # No config file, start with empty world
@@ -97,6 +102,8 @@ class WorldState:
             if not (wp in self.at):
                 self.at[wp] = []
 
+        rospy.loginfo('/%s/read_world_config/World config file %s, has been read.' % (self.node_name, self.world_config_file))
+        
         # TODO: Move to topics instead. Use latch and only publish a new topic when there is a change
         rospy.set_param('/available_drones', self.objects['drone'])
         rospy.set_param('/available_turtlebots', self.objects['turtlebot'])
