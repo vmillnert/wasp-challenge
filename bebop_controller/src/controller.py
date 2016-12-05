@@ -58,9 +58,12 @@ class Controller:
     self.action_status = ActionStatus.IDLE
     self.action = Action.NONE
     self.lock = RLock()
-    # start the transformation listener
-    # This will be moved up to the execute-controller once that
-    # one is up and running
+
+    # Control mode for the drone
+    # 'manual' - from teleoperation
+    # 'auto'   - go-to-goal behaviour using the PID-controller
+    self._control_mode = 'manual' # start in 'manual'-mode
+
     self.tfListener = tf.TransformListener()
 
   def set_yaw(self, yaw):
@@ -113,7 +116,14 @@ class Controller:
     print("N.A. land")
 
   def set_mode(self, mode):
-    print("N.A. set_mode")
+    self.lock.acquire()
+    if mode == 'auto':
+      rospy.loginfo('%s: Swicthed to %s mode', self._name, mode)
+      self._control_mode = mode
+    elif mode == 'manual':
+      rospy.loginfo('%s: Swicthed to %s mode', self._name, mode)
+      self._control_mode = mode
+    self.lock.release()
 
 # Subtract pose p1-p2
 def subtract_pose(p1, p2):
@@ -134,6 +144,23 @@ def norm2d(p):
   y = p.position.y
   return math.sqrt(x*x+y*y)
 
+# Get the yaw of a pose
+def getyaw(p):
+  q = (p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w)
+  e = tf.transformations.euler_from_quaternion(q)
+  return e[2]
+
+
+# Update the yaw of a pose
+def setyaw(p, yaw):
+  q = (p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w)
+  e = tf.transformations.euler_from_quaternion(q)
+  q = tf.transformations.quaternion_from_euler(e[0], e[1], yaw)
+  p.orientation.x = q[0]
+  p.orientation.y = q[1]
+  p.orientation.z = q[2]
+  p.orientation.w = q[3]
+
 class ARDroneSimController(Controller):
   def __init__(self, name):
     Controller.__init__(self, name)
@@ -144,6 +171,10 @@ class ARDroneSimController(Controller):
     rospy.Subscriber('ardrone/navdata', Navdata, self.cb_navdata)
     rospy.Subscriber('/gazebo/model_states', ModelStates, self.cb_modelstates)
 
+    # start the command callback from 'bebop_teleop' TODO: Base class!!
+    rospy.Subscriber('bebop_teleop/command', String, self.teleop_command_callback)
+    rospy.Subscriber('bebop_teleop/cmd_vel', Twist, self.teleop_velocity_callback)
+
     # Publishers
     self.pub_takeoff = rospy.Publisher('ardrone/takeoff', Empty, queue_size=10)
     self.pub_land = rospy.Publisher('ardrone/land', Empty, queue_size=10)
@@ -151,7 +182,6 @@ class ARDroneSimController(Controller):
 
     self.pose = Pose()
     self.target = Pose()
-    self.error = [0.0,0.0,0.0]
     self.velo = [0.0, 0.0, 0.0] # TODO: Listen to Navdata
     self.navdata = False
 
@@ -203,29 +233,65 @@ class ARDroneSimController(Controller):
       self.lock.acquire()
       printcounter += 1
       if printcounter == self.rate:
-        print("{} is {}\n  pose [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f})]\n  velocity ({:3.1f},{:3.1f},{:3.1f} [S({:3.1f},{:3.1f},{:3.1f})])".format(self._name,
-          ARDroneState.keys()[ARDroneState.values().index(self.navdata.state)],
+        print("{} is {} [{}]\n  pose [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f}) Y({:4.3f})]\n  velocity ({:3.1f},{:3.1f},{:3.1f} [S({:3.1f},{:3.1f},{:3.1f})])".format(self._name,
+          ARDroneState.keys()[ARDroneState.values().index(self.navdata.state)], self._control_mode,
           self.pose.position.x, self.pose.position.y, self.pose.position.z, 
           self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w,
+          getyaw(self.pose),
           self.navdata.vx, self.navdata.vy, self.navdata.vz,
           self.velo[0], self.velo[1], self.velo[2]))
+        if self.action == Action.GOTO:
+          print("  target [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f}) Y({:4.3f})]".format(
+            self.target.position.x, self.target.position.y, self.target.position.z, 
+            self.target.orientation.x, self.target.orientation.y, self.target.orientation.z, self.target.orientation.w,
+            getyaw(self.target)))
+        if not self.action == Action.NONE and self.get_action_status() == ActionStatus.STARTED:
+          print("  acting")
         printcounter = 0
-      if self.get_action_status() == ActionStatus.STARTED:
-        if self.action == Action.TAKEOFF:
-          if self.airborne():
-            self.set_action_status(ActionStatus.COMPLETED)
-        elif self.action == Action.GOTO:
-          e = subtract_pose(self.target, self.pose)
-          if norm2d(e) < 0.5:
-            self.send_velocity(0,0,0)
-            self.set_action_status(ActionStatus.COMPLETED)
-          else:
-            self.control_speed()
-        elif self.action == Action.LAND:
-          if self.grounded():
-            self.set_action_status(ActionStatus.COMPLETED)
+
+      if self._control_mode == 'manual':
+        self.manualmode()
+      else:
+        self.automode()
       self.lock.release()
       loop_rate.sleep()
+
+  def manualmode(self):
+    if self.get_action_status() == ActionStatus.STARTED:
+      # the current action failed beacuse we went into manual mode
+      self.set_action_status(ActionStatus.FAILED)
+    cmd_vel = deepcopy(self._teleop_vel)
+    self.pub_vel.publish(cmd_vel)
+ 
+  def automode(self):
+    if self.get_action_status() == ActionStatus.STARTED:
+      if self.action == Action.TAKEOFF:
+        if self.airborne():
+          self.set_action_status(ActionStatus.COMPLETED)
+      elif self.action == Action.GOTO:
+        e = subtract_pose(self.target, self.pose)
+        ye = getyaw(self.target)-getyaw(self.pose)
+
+        position_good = norm2d(e) < 0.5
+        yaw_good = abs(ye) < 0.02
+
+        velocity = (0,0,0)
+        rotation = 0
+
+        if not position_good:
+          velocity = self.control_speed(e)
+
+        if not yaw_good:
+          rotation = self.control_rotation(ye)
+
+        self.send_movement(velocity, rotation)
+
+        if position_good and yaw_good:
+          self.set_action_status(ActionStatus.COMPLETED)
+
+      elif self.action == Action.LAND:
+        if self.grounded():
+          self.set_action_status(ActionStatus.COMPLETED)
 
   def takeoff(self):
     self.lock.acquire()
@@ -242,6 +308,11 @@ class ARDroneSimController(Controller):
     self.set_action_status(ActionStatus.STARTED)
     self.lock.release()
 
+  def set_yaw(self, yaw):
+    self.lock.acquire()
+    setyaw(self.target, yaw)
+    self.lock.release()
+
   def set_goal(self, goal):
     if goal.header.frame_id != 'map':
       print("BAD FRAME!!!") # TODO Convert
@@ -251,25 +322,53 @@ class ARDroneSimController(Controller):
     self.target.position.x = goal.point.x
     self.target.position.y = goal.point.y
     self.target.position.z = goal.point.z
-    self.target.orientation = self.pose.orientation
-    self.lock.release()
-    
-  def control_speed(self):
-    target = (self.target.position.x,self.target.position.y,self.target.position.z)
-    location = (self.pose.position.x,self.pose.position.y,self.pose.position.z)
-    for i in range(0,2): # x,y only
-      e = target[i]-location[i]
-      v = max(-1, min(1, 100*e*1.0/self.rate))
-      self.velo[i] = v
-      self.error[i] = e
-    self.send_velocity(self.velo[0], self.velo[1], self.velo[2])
 
-  def send_velocity(self, x, y, z):
+    target_yaw = getyaw(self.target)
+    self.target.orientation = self.pose.orientation
+    setyaw(self.target, target_yaw)
+    
+    self.lock.release()
+
+  # Returns desired yaw rotation
+  def control_rotation(self, yaw_err):
+    return 25*yaw_err/self.rate;
+
+  # Returns desired velocities
+  def control_speed(self, err):
+    e = (err.position.x, err.position.y, err.position.z)
+    for i in range(0,2): # x,y only
+      v = max(-1, min(1, 100*e[i]/self.rate))
+      self.velo[i] = v
+    return (self.velo[0], self.velo[1], self.velo[2])
+
+  def send_movement(self, velocities, rotation):
     msg = Twist()
-    msg.linear.x = x
-    msg.linear.y = y
-    msg.linear.z = z
+    msg.linear.x = velocities[0]
+    msg.linear.y = velocities[1]
+    msg.linear.z = velocities[2]
+
+    msg.angular.z = rotation
     self.pub_vel.publish(msg)
+
+  def teleop_command_callback(self, msg):
+    # input commands from the bebop_teleop
+    if msg.data == "takeoff":
+      self.takeoff()
+    elif msg.data == "land":
+      self.land()
+    elif msg.data == "manual":
+      rospy.loginfo('%s: Swicthed to manual mode' % self._name)
+      self._control_mode = 'manual'
+    elif msg.data == "auto":
+      rospy.loginfo('%s: Swicthed to automatic mode' % self._name)
+      self._control_mode = 'auto'
+    else:
+      rospy.loginfo('%s: Got unknown command: %s \n', self._name, msg.data)
+
+  # Reads velocity commands sent from the teleoperation-keyboard
+  def teleop_velocity_callback(self, msg):
+    self._teleop_vel = msg
+    self._teleop_counter = 0
 
 
 class BebopController(Controller):
@@ -311,12 +410,6 @@ class BebopController(Controller):
                                    # teleoperation keyboard
 
 
-        # Control mode for the drone
-        # 'manual' - from teleoperation
-        # 'auto'   - go-to-goal behaviour using the PID-controller
-        self._control_mode = 'manual' # start in 'manual'-mode
-
-
         ####################
         # Start subscribers
 
@@ -324,10 +417,10 @@ class BebopController(Controller):
         rospy.Subscriber(self._name+'/odom', Odometry, self.pos_callback)
 
         # start the command callback from 'bebop_teleop'
-        rospy.Subscriber('/bebop_teleop/command', String, self.teleop_command_callback)
+        rospy.Subscriber('bebop_teleop/command', String, self.teleop_command_callback)
 
         # start the vellocetiy callback from 'bebop_teleop'
-        rospy.Subscriber('/bebop_teleop/cmd_vel', Twist, self.teleop_velocity_callback)
+        rospy.Subscriber('bebop_teleop/cmd_vel', Twist, self.teleop_velocity_callback)
 
        # self.tfListener.waitForTransform(self._child_frame_id,
         #                                 self._parent_frame_id,

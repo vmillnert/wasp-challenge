@@ -5,6 +5,7 @@ test "x$DRONES" != "x" || DRONES=1;
 test "x$BOTS" != "x" || BOTS=1;
 test "x$RVIZ" != "x" || RVIZ=0;
 test "x$DELAY" != "x" || DELAY=5;
+test "x$CONTROLLERS" != "x" || CONTROLLERS=1;
 
 mkdir -p logs;
 echo Launch the world
@@ -27,8 +28,11 @@ then
   roslaunch world ardrone_sim.launch >logs/drone.log 2>&1 &
   PIDS+=($!);
   sleep ${DELAY};
-  echo Add drone controllers
-  roslaunch world ardrone_sim_control.launch >logs/dronecontrol.log 2>&1 &
+  if test $CONTROLLERS -ne 0;
+  then
+    echo Add drone controllers
+    roslaunch world ardrone_sim_control.launch >logs/dronecontrol.log 2>&1 &
+  fi;
 fi;
 
 echo "Add map"

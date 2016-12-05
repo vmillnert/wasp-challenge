@@ -70,8 +70,8 @@ speedBindings={
 if __name__ == '__main__':
 
     # Start the publisher
-    pub = rospy.Publisher('/bebop_teleop/cmd_vel', Twist, queue_size=1)
-    command_pub = rospy.Publisher('/bebop_teleop/command', String, queue_size=10)
+    pub = rospy.Publisher('bebop_teleop/cmd_vel', Twist, queue_size=1)
+    command_pub = rospy.Publisher('bebop_teleop/command', String, queue_size=10)
     
     rospy.init_node('teleop_twist_keyboard')
     

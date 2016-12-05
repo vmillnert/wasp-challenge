@@ -4,11 +4,14 @@
     <node pkg="bebop_controller" type="BebopActionServer.py" name="drone0_action_server" output="screen">
       <env name="DRONESIM" value="1"/>
     </node>
+    <node name="bebop_teleop" pkg="bebop_controller" type="teleop.py" output="screen" />
+
   </group>
 
   <group ns="drone1">
     <node pkg="bebop_controller" type="BebopActionServer.py" name="drone1_action_server" output="screen">
       <env name="DRONESIM" value="1"/>
     </node>
+    <node name="bebop_teleop" pkg="bebop_controller" type="teleop.py" output="screen" />
   </group>
 </launch>
