@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <launch>
+  <!-- The map was made with the turtle bot starting at position -0.5,-0.5 in the gazebo world -->
+  <node pkg="tf" type="static_transform_publisher" name="world_to_map" args="0.5 0.5 0 0 0 0 map world 100"/>
   <!-- Spawn simulated quadrotor uav -->
   <group ns="drone0">
     <param name="tf_prefix" value="drone0"/>
@@ -13,7 +15,7 @@
       <remap from="joint_states" to="different_joint_states" />-->
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="map_to_drone0" args="0 0 0 0 0 0 map drone0/base_link 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="map_to_drone0" args="0.5 0.5 0 0 0 0 map drone0/base_link 100"/>
  </group>
 
   <group ns="drone1">
@@ -30,7 +32,7 @@
       <remap from="joint_states" to="different_joint_states" />-->
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="map_to_drone1" args="0 0 0 0 0 0 map drone1/base_link 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="map_to_drone1" args="1.5 1.5 0 0 0 0 map drone1/base_link 100"/>
   </group>
 
 </launch>
