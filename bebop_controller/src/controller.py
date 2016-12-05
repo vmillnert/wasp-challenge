@@ -383,6 +383,7 @@ class ARDroneSimController(Controller):
     if goal.header.frame_id != 'map':
       print("BAD FRAME!!!") # TODO Convert
     self.lock.acquire()
+
     self.action = Action.GOTO
     self.set_action_status(ActionStatus.STARTED)
 
@@ -392,6 +393,9 @@ class ARDroneSimController(Controller):
     target_yaw = getyaw(self.target)
     self.target.orientation = deepcopy(self.pose.orientation)
     setyaw(self.target, target_yaw)
+
+    if not self.airborne():
+      self.takeoff()
     
     self.lock.release()
 
