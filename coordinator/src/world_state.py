@@ -221,7 +221,9 @@ class WorldState:
         params = {p.key: p.value for p in action.parameters}
 
         if action.name == 'goto':
-#            self.at[params['from']].remove(params['agent'])
+            for loc, objs in self.at.iteritems():
+                if params['agent'] in objs:
+                    objs.remove(params['agent'])
             self.at[params['to']].append(params['agent'])
 
         elif action.name == 'pick-up':
