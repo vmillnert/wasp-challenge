@@ -155,7 +155,7 @@ class Coordinator:
         else:
           client.set_action(action)
           # Shared actions between action feeder and planner
-          if (msg.name == 'goto'):
+          if (msg.name == 'goto' or msg.name == 'fly'):
             client.ac = self.action_goto(action)
           elif (msg.name == 'takeoff'):
             client.ac = self.action_takeoff(action)
@@ -170,7 +170,9 @@ class Coordinator:
           #Actions only defined by planner
           elif (msg.name == 'pick-up'):
             client.ac = self.action_load(action)
-          elif (msg.name == 'hand-over'):
+          elif (msg.name == 'hand-over-drone2bot'):
+            client.ac = self.action_unload(action)
+          elif (msg.name == 'hand-over-bot2drone'): 
             client.ac = self.action_load(action)
           else:
             rospy.loginfo("No action called %s for agent %s", msg.name, msg.agent)

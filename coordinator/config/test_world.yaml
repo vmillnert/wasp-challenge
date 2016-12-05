@@ -29,6 +29,7 @@ at:
     - person1
   wp2:
     - drone0
+    - bot0
   wp3:
     - drone1
 
