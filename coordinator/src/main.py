@@ -134,7 +134,9 @@ class Coordinator:
 
         rospy.loginfo('* Coordinator is waiting for action clients')
         for k in self.clients.keys():
+          rospy.loginfo("* Wait for client {}".format(k))
           self.clients[k].wait_for()
+        rospy.loginfo('* All action clients have started')
 
         self.coordinate_frame = rospy.get_param("~coordinate_frame", "map")
 
