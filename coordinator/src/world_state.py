@@ -54,12 +54,6 @@ class WorldState:
             rospy.wait_for_service(knowledge_service_name)
         self.clear_knowledge = rospy.ServiceProxy(knowledge_service_name, Empty)
 
-        # Setup own services for coordinator
-        self.waypoint_pos_service = rospy.Service('~get_waypoint_position', WaypointPosition, self.get_waypoint_position)
-        self.replan_service = rospy.Service('~plan', Empty, self.start_planner)
-        self.action_finished_service = rospy.Service('~action_finished', ActionFinished, self.action_finished_cb)
-        self.read_config_service = rospy.Service('~read_world_config', Empty, self.read_world_config_cb)
-
         # Variables for keeping track of the world
         self.objects = {}
         self.at = {}
@@ -69,6 +63,12 @@ class WorldState:
 
         # Read config file
         self.read_world_config()
+
+        # Setup own services for coordinator
+        self.waypoint_pos_service = rospy.Service('~get_waypoint_position', WaypointPosition, self.get_waypoint_position)
+        self.replan_service = rospy.Service('~plan', Empty, self.start_planner)
+        self.action_finished_service = rospy.Service('~action_finished', ActionFinished, self.action_finished_cb)
+        self.read_config_service = rospy.Service('~read_world_config', Empty, self.read_world_config_cb)
 
     
     def read_world_config_cb(self, request):
