@@ -149,7 +149,7 @@ class Coordinator:
         action = Action(msg)
         client = self.clients[action.agent]
         client.lock()
-        rospy.loginfo('/coordinator/action_dispatch_callback agent "%s", action "%s"', action.agent, action.name)
+        rospy.loginfo('\033[92m/coordinator/action_dispatch_callback agent "%s", action "%s" \033[0m', action.agent, action.name)
 
         if not client.is_idle():
           rospy.loginfo('Agent "%s" is occupied, action queued', action.agent)
