@@ -1,3 +1,2 @@
-takeoff, drone
-goto, drone, wp11
-land, drone
+takeoff, /bebop
+land, /bebop

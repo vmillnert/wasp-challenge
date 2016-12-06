@@ -62,8 +62,9 @@ class BebopActionServer(object):
           if 'DRONESIM' in os.environ or rospy.get_param('~sim', False):
             self.controller = ARDroneSimController(rospy.names.get_namespace()[1:-1])
           else:
-            self.controller = BebopController("bebop")
-          self.controller.set_mode("auto")
+            self.controller = BebopController('/bebop')
+    
+          self.controller.set_mode('auto')
 
 
         # Finally, start action servers
@@ -90,6 +91,7 @@ class BebopActionServer(object):
     def cb_land(self, goal):
         rospy.loginfo("/BebopActionServer/cb_land action_id %s", self.as_land.current_goal.get_goal_id().id)
         self.controller.land()
+        rospy.sleep(1)
         self.handle_feedback(self.as_land)
 
 
@@ -106,7 +108,7 @@ class BebopActionServer(object):
     def cb_takeoff(self, goal):
         rospy.loginfo("/BebopActionServer/cb_takeoff action_id %s", self.as_takeoff.current_goal.get_goal_id().id)
         self.controller.takeoff()
-        #rospy.sleep(1)
+        rospy.sleep(1)
         self.handle_feedback(self.as_takeoff)
 
 
@@ -116,7 +118,7 @@ class BebopActionServer(object):
         point_goal.header = goal.target_pose.header
         point_goal.point = goal.target_pose.pose.position
         self.controller.set_goal(point_goal)
-        #rospy.sleep(1)
+        rospy.sleep(1)
         self.handle_feedback(self.as_move)
 
     def mark_load_event(self, actionserver):
@@ -168,8 +170,9 @@ if __name__ == '__main__':
         # create the controller object
         bebop_as = BebopActionServer()
         rospy.sleep(0.1)
-        bebop_as.spin()
+
         rospy.loginfo("Start a spin")
+        bebop_as.spin()
         while not rospy.is_shutdown():
             rospy.sleep(0.1)
 

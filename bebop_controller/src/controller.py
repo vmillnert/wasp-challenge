@@ -452,6 +452,7 @@ class BebopController(Controller):
     
     def __init__(self, name):
         Controller.__init__(self, name)
+        rospy.loginfo('%s: THIS IS MY NAME...', self._name)
 
         self.landing = False
 
@@ -491,10 +492,10 @@ class BebopController(Controller):
         # start the vellocetiy callback from 'bebop_teleop'
         rospy.Subscriber('bebop_teleop/cmd_vel', Twist, self.teleop_velocity_callback)
 
-        # self.tfListener.waitForTransform(self._child_frame_id,
-        #                                 self._parent_frame_id,
-        #                                 rospy.Time(0),
-        #                                 rospy.Duration(5))
+        self.tfListener.waitForTransform(self._child_frame_id,
+                                        self._parent_frame_id,
+                                        rospy.Time(0),
+                                        rospy.Duration(5))
 
 
         ###################
@@ -512,7 +513,7 @@ class BebopController(Controller):
         self.yawPID = yawPID() # pid-controller for the yaw (needs a special pid-controller due to the angles)
 
         ########################
-
+        
         # Set goal position here for now
         # This is only used for takeoff from teleoperation
         # goal_point = PointStamped()
@@ -761,8 +762,8 @@ class BebopController(Controller):
 
             # check if we are in automatic-mode or if the action has been aborted
             elif self._control_mode == 'auto' and (not self.landing):
-                rospy.loginfo('%s: \n self.action_status: %d\n action_status: %d \n', 
-                              self._name, self.get_action_status(), action_status)
+                # rospy.loginfo('%s: \n self.action_status: %d\n action_status: %d \n', 
+                #               self._name, self.get_action_status(), action_status)
                                   
                 # Automatic mode
                 self.goal_reached = (numpy.sqrt((xref-x)**2 + (yref-y)**2) < self._TOLERANCE) \
@@ -814,12 +815,12 @@ class BebopController(Controller):
 
                 else:
                     # We are within the tolerance for the goal!
-                    rospy.loginfo('%s: \n self.action_status: %d\n action_status: %d \n', 
-                                  self._name, self.get_action_status(), action_status)
+                    # rospy.loginfo('%s: \n self.action_status: %d\n action_status: %d \n', 
+                    #               self._name, self.get_action_status(), action_status)
 
                     if action_status == ActionStatus.STARTED:
-                        rospy.loginfo('%s: \n action_status==STARTED \n self.action_status: %d\n action_status: %d \n', 
-                                      self._name, self.get_action_status(), action_status)
+                        # rospy.loginfo('%s: \n action_status==STARTED \n self.action_status: %d\n action_status: %d \n', 
+                        #               self._name, self.get_action_status(), action_status)
 
                         if action_status==self.get_action_status():
                             self.set_action_status(ActionStatus.COMPLETED)
@@ -941,6 +942,7 @@ if __name__ == '__main__':
         # create the controller object
         c = BebopController(rospy.get_name())
         # start the controller
+        c.set_mode('auto')
         c.run()
 
     except rospy.ROSInterruptException:

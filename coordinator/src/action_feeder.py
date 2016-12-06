@@ -45,7 +45,7 @@ class ActionFeeder:
         self.action_pub = rospy.Publisher("/kcl_rosplan/action_dispatch", ActionDispatch, queue_size=10)
 
         rospy.Subscriber("/kcl_rosplan/action_feedback", ActionFeedback, self.action_feedback_callback)
-#        rospy.sleep(2)
+        rospy.sleep(2)
 
     def read_actions(self, filename):
         actions = []
@@ -109,6 +109,9 @@ class ActionFeeder:
 
 
 if __name__ == '__main__':
+
+    print('Trying to initialize the action_feeder')
+
     if len(sys.argv) < 2:
         print("usage: action_feeder.py action_file")
     else:

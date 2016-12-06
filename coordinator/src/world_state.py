@@ -95,8 +95,12 @@ class WorldState:
             self.waypoint_positions[air_wp] = self.waypoint_positions[wp]
 
         # Initiate carrying dict
-        self.carrying = {agent: [] for agent in (self.objects['drone'] + self.objects['turtlebot'])}
-        
+        if 'turtlebot' in self.objects:
+            self.carrying = {agent: [] for agent in (self.objects['drone'] + self.objects['turtlebot'])}
+        else:
+            self.carrying = {agent: [] for agent in (self.objects['drone'])}
+
+
         # Initate empty waypoints
         for wp in (self.objects['waypoint'] + self.objects['airwaypoint']):
             if not (wp in self.at):
@@ -106,7 +110,11 @@ class WorldState:
         
         # TODO: Move to topics instead. Use latch and only publish a new topic when there is a change
         rospy.set_param('/available_drones', self.objects['drone'])
-        rospy.set_param('/available_turtlebots', self.objects['turtlebot'])
+        if 'turtlebot' in self.objects:
+            rospy.set_param('/available_turtlebots', self.objects['turtlebot'])
+        else:
+            rospy.set_param('/available_turtlebots', [])
+
 
         return True
 
