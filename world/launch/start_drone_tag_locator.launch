@@ -1,7 +1,14 @@
-<!---
-  Don't forget to calibrate your camera!
--->
 <launch>
+  <arg name="rectnamespace" default="/bebop" />
+  <include file="$(find world)/launch/start_rectify.launch"/>
+
+  <arg name="cropinnamespace" default="/bebop" />
+  <arg name="cropoutnamespace" default="/crop_out" />
+  <include file="$(find world)/launch/start_crop.launch"/>
+
+  <arg name="tagimage" value="bebop/image_raw" />
+  <arg name="tagcaminfo" value="bebop/camera_info" />
   <include file="$(find world)/launch/start_april_tags.launch"/>
+
   <include file="$(find world)/launch/start_transform.launch"/>
 </launch>

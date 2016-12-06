@@ -1,0 +1,13 @@
+<launch>
+  <arg name="cropinnamespace" default="/bebop" />
+  <arg name="cropoutnamespace" default="/crop_out" />
+
+  <node pkg="nodelet" type="nodelet" args="standalone image_proc/crop_decimate" name="image_crop">
+    <remap from="/camera" to="$(arg cropinnamespace)"/>
+    <remap from="/camera_out" to="$(arg cropoutnamespace)"/>
+	  <param name="x_offset" type="int" value="85"/>
+	  <param name="y_offset" type="int" value="50"/>
+	  <param name="width" type="int" value="686"/>
+	  <param name="height" type="int" value="380"/>
+  </node>
+</launch>

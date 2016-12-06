@@ -1,0 +1,6 @@
+<launch>
+  <arg name="rectnamespace" default="/bebop" />
+  <node pkg="image_proc" type="image_proc" name="image_rectify">
+    <env name="ROS_NAMESPACE" value="$(arg rectnamespace)" />
+  </node>
+</launch>
