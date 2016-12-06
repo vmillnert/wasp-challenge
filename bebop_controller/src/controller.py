@@ -66,6 +66,9 @@ class Controller:
 
     self.tfListener = tf.TransformListener()
 
+  def airborne(self):
+    raise "Airborne not implemented in controller"
+
   def set_yaw(self, yaw):
     pass
 
@@ -216,6 +219,7 @@ class ARDroneSimController(Controller):
     self.target = Pose()
     self.velo = [0.0, 0.0, 0.0] # TODO: Listen to Navdata
     self.navdata = False
+    self.setpoint_height = 1.5 + 0.5 * int(name[-1])
 
   # Transforms world position to map
   def update_pose(self):
@@ -320,7 +324,7 @@ class ARDroneSimController(Controller):
     if self.get_action_status() == ActionStatus.STARTED:
       if self.action == Action.TAKEOFF:
         if self.airborne():
-          self.set_height(1.5) # Not done yet, rise to height 1.5 first
+          self.set_height(self.setpoint_height) # Not done yet, rise to designated setpoint first
       elif self.action == Action.GOTO:
         e = subtract_pose(self.target, self.pose)
         ye = getyaw(self.target)-getyaw(self.pose)

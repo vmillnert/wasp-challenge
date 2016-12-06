@@ -113,6 +113,10 @@ class BebopActionServer(object):
 
 
     def cb_move_base(self, goal):
+        if not self.controller.airborne():
+          self.controller.takeoff()
+          status, preempted = self.handle_feedback(self.as_move, send_result = False)
+
         rospy.loginfo("/BebopActionServer/cb_move_base action_id %s", self.as_move.current_goal.get_goal_id().id)
         point_goal = PointStamped()
         point_goal.header = goal.target_pose.header

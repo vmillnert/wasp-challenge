@@ -1,0 +1,6 @@
+takeoff, drone0
+goto, drone1, wp3
+land, drone1
+goto, drone1, wp10
+land, drone1
+land, drone0
