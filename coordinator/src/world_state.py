@@ -150,7 +150,7 @@ class WorldState:
                 kitem.knowledge_type = KnowledgeItem.FUNCTION
                 kitem.attribute_name = "move-duration"
                 kitem.values = [KeyValue('from', wp1), KeyValue('to', wp2)]
-                kitem.function_value = self.waypoint_distance(wp1,wp2)
+                kitem.function_value = 10*self.waypoint_distance(wp1,wp2)
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Set empty for agents and waypoints
@@ -187,6 +187,27 @@ class WorldState:
             kitem.attribute_name = 'over'
             self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
+        
+        # All drones at ground waypoints have landed
+        for drone in self.objects['drone']:
+            for wp, objs in self.at.iteritems():
+                if wp in self.objects['waypoint'] and drone in objs:
+                    kitem = KnowledgeItem()
+                    kitem.knowledge_type = KnowledgeItem.FACT
+                    kitem.values = [KeyValue('drone', drone)]
+                    kitem.attribute_name = 'landed'
+                    self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
+
+        # All drones at air waypoints are airborne
+        for drone in self.objects['drone']:
+            for wp, objs in self.at.iteritems():
+                if wp in self.objects['airwaypoint'] and drone in objs:
+                    kitem = KnowledgeItem()
+                    kitem.knowledge_type = KnowledgeItem.FACT
+                    kitem.values = [KeyValue('drone', drone)]
+                    kitem.attribute_name = 'airborne'
+                    self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
+
         # Set goals, each person should be handled
         for person in self.objects['person']:
             kitem = KnowledgeItem()
@@ -194,6 +215,15 @@ class WorldState:
             kitem.values = [KeyValue('person', person)]
             kitem.attribute_name = 'handled'
             self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_GOAL, knowledge=kitem)
+
+        
+        # Require drones to have landed
+        for drone in self.objects['drone']:
+            kitem = KnowledgeItem()
+            kitem.knowledge_type = KnowledgeItem.FACT
+            kitem.values = [KeyValue('drone', drone)]
+            kitem.attribute_name = 'landed'
+            self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_GOAL, knowledge=kitem)        
 
     def waypoint_distance(self, wp1, wp2):
         if wp1 == wp2:

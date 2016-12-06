@@ -22,6 +22,8 @@
 
   (carrying ?agent - agent ?box - box)
 
+  ;Need double predicates since negative :preconditions are not supported
+  (landed ?drone - drone)
   (airborne ?drone - drone))
 
 (:functions (move-duration ?from ?to - waypoint) - number)
@@ -112,19 +114,27 @@
   :parameters (?drone - drone ?air - airwaypoint ?ground - waypoint)
   :duration (= ?duration 1)
   :condition (and (over all (over ?air ?ground))
-                  (at start (at ?drone ?ground)))
+                  (at start (at ?drone ?ground))
+                  (at start (empty ?air)))
   :effect (and (at end (at ?drone ?air))
-               (at end (not (at ?drone ?ground)))
-               (at end (airborne ?drone)))
+               (at end (not (empty ?air)))
+               (at start (empty ?ground))
+               (at start (not (at ?drone ?ground)))
+               (at end (airborne ?drone))
+               (at end (not (landed ?drone))))
   )
 
 (:durative-action land
   :parameters (?drone - drone ?air - airwaypoint ?ground - waypoint)
   :duration (= ?duration 1)
   :condition (and (over all (over ?air ?ground))
-                  (at start (at ?drone ?air)))
+                  (at start (at ?drone ?air))
+                  (at start (empty ?ground)))
   :effect (and (at end (at ?drone ?ground))
-               (at end (not (at ?drone ?air)))
+               (at end (not (empty ?ground)))
+               (at start (empty ?air))
+               (at start (not (at ?drone ?air)))
+               (at end (landed ?drone))
                (at end (not (airborne ?drone))))
   )
 )
