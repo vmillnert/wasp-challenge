@@ -27,11 +27,11 @@ at:
   depo: *boxes
   wp00:
     - person0
+    - bot0
   wp01:
     - person1
   wp2:
     - drone0
-    - bot0
   wp3:
     - drone1
 
