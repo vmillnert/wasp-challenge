@@ -184,15 +184,15 @@ class Coordinator:
     def _action_feedback_from_state(self, action, state):
         success = (state == GoalStatus.SUCCEEDED)
 
+        # Update world state
+        update_request = ActionFinishedRequest(action = action.msg, success = success)
+        self.action_finished_update(update_request)
+
         # Feedback to rosplan
         feedback_msg = ActionFeedback()
         feedback_msg.action_id = action.action_id
         feedback_msg.status = "action achieved" if success else "action failed"
         self.feedback_pub.publish(feedback_msg)
-
-        # Update world state
-        update_request = ActionFinishedRequest(action = action.msg, success = success)
-        self.action_finished_update(update_request)
 
 
     def action_takeoff(self, action):
