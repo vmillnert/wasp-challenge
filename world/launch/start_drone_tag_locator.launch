@@ -1,7 +1,11 @@
-<!---
-  Don't forget to calibrate your camera!
--->
 <launch>
+<!--
+  <arg name="rectnamespace" value="/bebop" />
+  <include file="$(find world)/launch/start_rectify.launch"/>
+  <arg name="tagimage" value="bebop/image_rect" />
+  <arg name="tagcaminfo" value="bebop/camera_info" />
+-->
+
   <include file="$(find world)/launch/start_april_tags.launch"/>
   <include file="$(find world)/launch/start_transform.launch"/>
 </launch>

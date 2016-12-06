@@ -1,6 +1,3 @@
-<!---
-  Don't forget to calibrate your camera!
--->
 <launch>
   <node pkg="world" type="MapTransform.py" name="map_transform" output="screen"/>
   <node pkg="world" type="MapBebopTransform.py" name="map_bebop" output="screen"/>
