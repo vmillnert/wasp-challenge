@@ -9,10 +9,10 @@ objects:
     - wp2
     - wp3
   drone:
-    - drone
+    - drone0
   turtlebot:
     - bot0
-#    - bot1
+    - bot1
   person:
     - person0
     - person1
