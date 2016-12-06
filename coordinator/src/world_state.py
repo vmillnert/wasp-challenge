@@ -235,7 +235,7 @@ class WorldState:
         action = action_req.action
         params = {p.key: p.value for p in action.parameters}
 
-        if action.name == 'goto':
+        if action.name == 'goto' or action.name == 'fly':
             for loc, objs in self.at.iteritems():
                 if params['agent'] in objs:
                     objs.remove(params['agent'])
@@ -245,9 +245,13 @@ class WorldState:
             self.at[params['ground']].remove(params['box'])
             self.carrying[params['drone']].append(params['box'])
 
-        elif action.name == 'hand-over':
+        elif action.name == 'hand-over-drone2bot':
             self.carrying[params['turtlebot']].append(params['box'])
             self.carrying[params['drone']].remove(params['box'])
+
+        elif action.name == 'hand-over-bot2drone':
+            self.carrying[params['drone']].append(params['box'])
+            self.carrying[params['turtlebot']].remove(params['box'])
 
         elif action.name == 'unload':
             self.carrying[params['drone']].remove(params['box'])
@@ -268,6 +272,10 @@ class WorldState:
         print "Locations:"
         for wp, objs in self.at.iteritems():
             print "%s: %s" % (wp, ",".join(objs))
+        print "Carrying:"
+        for wp, objs in self.carrying.iteritems():
+            print "%s: %s" % (wp, ",".join(objs))
+
         print "--------------------------------"
 
     def spin(self):
