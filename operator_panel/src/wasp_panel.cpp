@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "ros/ros.h"
 
 #include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QWidget>
 #include <QLabel>
 
 #include "std_msgs/String.h"
@@ -18,39 +18,52 @@ WaspPanel::WaspPanel(QWidget* parent )
   : rviz::Panel( parent )
 {
 
-  // Add start button
-  start_button_ = new QPushButton("Start");
-  stop_button_ = new QPushButton("Stop");
+  // Add buttons
+  plan_button_ = new QPushButton("Start");
+  cancel_button_ = new QPushButton("Stop");
+  pause_button_ = new QPushButton("Pause");
+
+  plan_button_->setToolTip("Test");
+  cancel_button_->setToolTip("Cancel the plan. Finishes the current actions.");
+  pause_button_->setToolTip("Finishes current actions, then pauses the exection of the plan. Click Pause again to continue.");
 
   // Lay out the topic field above the control widget.
   QVBoxLayout* layout = new QVBoxLayout;
-  layout->addWidget( start_button_ );
-  layout->addWidget( stop_button_ );
+  layout->addWidget( plan_button_ );
+  layout->addWidget( cancel_button_ );
+  layout->addWidget( pause_button_ );
 
   setLayout( layout );
 
-  connect( start_button_, SIGNAL( clicked()), this, SLOT( sendStart() ));
-  connect( stop_button_, SIGNAL( clicked() ), this, SLOT( sendStop() ));
+  connect( plan_button_, SIGNAL( clicked()), this, SLOT( sendPlan() ));
+  connect( cancel_button_, SIGNAL( clicked() ), this, SLOT( sendCancel() ));
+  connect( pause_button_, SIGNAL( clicked() ), this, SLOT( sendPause() ));
 
-
-  // planner_publisher_ = nh_.advertise<std_msgs::String>( "/rosout", 1 );
+  planner_publisher_ = nh_.advertise<std_msgs::String>( "/kcl_rosplan/planning_commands", 1 );
 
 }
 
-void WaspPanel::sendStart()
-{
+void WaspPanel::sendPause() {
   std_msgs::String msg;
-  msg.data = "\033[31m sendStart()\033[0m";
-  chatter_pub_.publish(msg);
-  ROS_INFO("%s", msg.data.c_str());
+  msg.data = "pause";
+  planner_publisher_.publish(msg);
+  ROS_INFO("\033[31m %s\033[0m", msg.data.c_str());
 }
 
-void WaspPanel::sendStop()
+void WaspPanel::sendPlan()
 {
   std_msgs::String msg;
-  msg.data = "\033[31m sendStop()\033[0m";
-  chatter_pub_.publish(msg);
-  ROS_INFO("%s", msg.data.c_str());
+  msg.data = "plan";
+  planner_publisher_.publish(msg);
+  ROS_INFO("\033[31m %s\033[0m", msg.data.c_str());
+}
+
+void WaspPanel::sendCancel()
+{
+  std_msgs::String msg;
+  msg.data = "cancel";
+  planner_publisher_.publish(msg);
+  ROS_INFO("\033[31m %s\033[0m", msg.data.c_str());
 }
 
 } // end namespace operator_panel

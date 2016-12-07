@@ -31,19 +31,22 @@ public:
   // Here we declare some internal slots.
 protected Q_SLOTS:
 
-  void sendStart();
-  void sendStop();
+  void sendPlan();
+  void sendCancel();
+  void sendPause();
   // Then we finish up with protected member variables.
 protected:
   // Start button
-  QPushButton* start_button_;
+  QPushButton* plan_button_;
 
   // Stop button
-  QPushButton* stop_button_;
+  QPushButton* cancel_button_;
+
+  // Pause button
+  QPushButton* pause_button_;
 
   // Publisher for the planning commands
-  //ros::Publisher planner_publisher_;
-  ros::Publisher chatter_pub_;
+  ros::Publisher planner_publisher_;
 
   // The ROS node handle.
   ros::NodeHandle nh_;

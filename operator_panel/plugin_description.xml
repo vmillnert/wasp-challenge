@@ -1,5 +1,5 @@
 <library path="lib/liboperator_panel">
-  <class name="operator_panel/Wasp"
+  <class name="operator_panel/KCL_planning_commands"
          type="operator_panel::WaspPanel"
          base_class_type="rviz::Panel">
     <description>
