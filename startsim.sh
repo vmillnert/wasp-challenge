@@ -6,6 +6,7 @@ test "x$BOTS" != "x" || BOTS=1;
 test "x$RVIZ" != "x" || RVIZ=0;
 test "x$DELAY" != "x" || DELAY=5;
 test "x$CONTROLLERS" != "x" || CONTROLLERS=1;
+test "x$MAP" != "x" || MAP=1;
 
 mkdir -p logs;
 echo Launch the world
@@ -36,9 +37,12 @@ then
   fi;
 fi;
 
-echo "Add map"
-roslaunch world sim_map.launch >logs/map.log 2>&1 &
-PIDS+=($!);
+if test $MAP -ne 0;
+then
+  echo "Add map"
+  roslaunch world sim_map.launch >logs/map.log 2>&1 &
+  PIDS+=($!);
+fi;
 
 if test $RVIZ -ne 0;
 then
