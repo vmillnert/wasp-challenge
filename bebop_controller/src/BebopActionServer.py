@@ -62,7 +62,8 @@ class BebopActionServer(object):
           if 'DRONESIM' in os.environ or rospy.get_param('~sim', False):
             self.controller = ARDroneSimController(rospy.names.get_namespace()[1:-1])
           else:
-            self.controller = BebopController('/bebop')
+            self.controller = BebopController(rospy.names.get_namespace()[0:-1])
+            # self.controller = BebopController('/bebop')
     
           self.controller.set_mode('auto')
 

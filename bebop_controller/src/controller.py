@@ -487,11 +487,14 @@ class BebopController(Controller):
         rospy.Subscriber(self._name+'/odom', Odometry, self.pos_callback)
 
         # start the command callback from 'bebop_teleop'
-        rospy.Subscriber('bebop_teleop/command', String, self.teleop_command_callback)
+        rospy.Subscriber(self._name+'/bebop_teleop/command', String, self.teleop_command_callback)
 
         # start the vellocetiy callback from 'bebop_teleop'
-        rospy.Subscriber('bebop_teleop/cmd_vel', Twist, self.teleop_velocity_callback)
-
+        rospy.Subscriber(self._name+'/bebop_teleop/cmd_vel', Twist, self.teleop_velocity_callback)
+        
+        rospy.loginfo('%s: child: %s,    parent: %s', self._name, self._child_frame_id, self._parent_frame_id)
+        
+        
         self.tfListener.waitForTransform(self._child_frame_id,
                                         self._parent_frame_id,
                                         rospy.Time(0),
@@ -511,7 +514,7 @@ class BebopController(Controller):
         self.yPID = PID() # pid-controller for y-direction
         self.zPID = PID() # pid-controller for z-direction
         self.yawPID = yawPID() # pid-controller for the yaw (needs a special pid-controller due to the angles)
-
+        rospy.loginfo('%s: we have initialized the PIDs', self._name)
         ########################
         
         # Set goal position here for now
@@ -852,6 +855,7 @@ class BebopController(Controller):
 
     # Commands from the teleoperation keyboard
     def teleop_command_callback(self, msg):
+        rospy.loginfo('%s: Got teleop-command!', self._name)
         # input commands from the bebop_teleop
         if msg.data == "takeoff":
             self.takeoff()

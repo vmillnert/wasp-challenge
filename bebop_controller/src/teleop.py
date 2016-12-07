@@ -67,8 +67,11 @@ speedBindings={
 
 def run():
     # Start the publisher
-    pub = rospy.Publisher('bebop_teleop/cmd_vel', Twist, queue_size=1)
-    command_pub = rospy.Publisher('bebop_teleop/command', String, queue_size=10)
+    #TODO: change the namespacing here!
+    name = rospy.names.get_namespace()[0:-1]
+    rospy.loginfo('name: %s', name)
+    pub = rospy.Publisher(name+'/bebop_teleop/cmd_vel', Twist, queue_size=1)
+    command_pub = rospy.Publisher(name+'/bebop_teleop/command', String, queue_size=10)
 
     pygame.init()
 
