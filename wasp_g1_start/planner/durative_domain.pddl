@@ -114,7 +114,7 @@
   :condition (and (over all (over ?air ?ground))
                   (at start (at ?drone ?ground)))
   :effect (and (at end (at ?drone ?air))
-               (at end (not (at ?drone ?ground)))
+               (at start (not (at ?drone ?ground)))
                (at end (airborne ?drone)))
   )
 
@@ -124,8 +124,8 @@
   :condition (and (over all (over ?air ?ground))
                   (at start (at ?drone ?air)))
   :effect (and (at end (at ?drone ?ground))
-               (at end (not (at ?drone ?air)))
-               (at end (not (airborne ?drone))))
+               (at start (not (at ?drone ?air)))
+               (at start (not (airborne ?drone))))
   )
 )
 

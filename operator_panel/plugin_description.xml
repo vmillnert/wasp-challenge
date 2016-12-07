@@ -1,24 +1,9 @@
 <library path="lib/liboperator_panel">
-  <class name="operator_panel/Wasp"
+  <class name="operator_panel/KCL_planning_commands"
          type="operator_panel::WaspPanel"
          base_class_type="rviz::Panel">
     <description>
       A panel widget allowing simple diff-drive style robot base control.
-    </description>
-  </class>
-  <class name="operator_panel/Imu"
-         type="operator_panel::ImuDisplay"
-         base_class_type="rviz::Display">
-    <description>
-      Displays direction and scale of accelerations from sensor_msgs/Imu messages.
-    </description>
-    <message_type>sensor_msgs/Imu</message_type>
-  </class>
-  <class name="operator_panel/PlantFlag"
-         type="operator_panel::PlantFlagTool"
-         base_class_type="rviz::Tool">
-    <description>
-      Tool for planting flags on the ground plane in rviz.
     </description>
   </class>
 </library>
