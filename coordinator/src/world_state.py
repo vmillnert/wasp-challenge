@@ -222,7 +222,12 @@ class WorldState:
         action = action_req.action
         params = {p.key: p.value for p in action.parameters}
 
-        if action.name == 'goto' or action.name == 'fly':
+        #Early exit for unsuccessful action
+        #TODO: Special handling of some action. E.g. Add new waypoint if goto or fly cancelled
+        if not action_req.success:
+            pass
+
+        elif action.name == 'goto' or action.name == 'fly':
             for loc, objs in self.at.iteritems():
                 if params['agent'] in objs:
                     objs.remove(params['agent'])

@@ -134,7 +134,7 @@ class BebopActionServer(object):
         status, preempted = self.handle_feedback(actionserver, send_result = False)
 
         if status == ActionStatus.COMPLETED:
-            self.controller.set_height(1.5)
+            self.controller.set_height(self.controller.setpoint_height)
             self.controller.set_yaw(0)
             self.handle_feedback(actionserver, send_result = True)
         else:
