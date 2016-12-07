@@ -25,6 +25,11 @@ For the ROSPlan Package depends on the following package to fully function.
 
 It is important to don't have a mongodb service running. Ubuntu has this as default. If `roslaunch wasp_g1_start rosplan_test.launch` fails, then it is most likely due too a running instance of mongodb. Then run `sudo service mongodb stop`.
 
+### Simulator
+The simulator uses the Parrot AR.Drone, not Bebop, and the thinc_simulator package. There is a bash script 'startsim.sh' on the source root which launches a simulator environment.
+
+`sudo apt-get install ros-indigo-turtlebot-gazebo ros-indigo-ardrone-autonomy ros-indigo-parrot-arsdk ros-indigo-zeroconf-avahi`
+
 ---
 
 ## Directory Contents

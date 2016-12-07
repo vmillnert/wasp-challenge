@@ -123,23 +123,6 @@ class WorldState:
         # Remove earlier entries from knowledge database
         self.clear_knowledge()
 
-        # Build a new at dict where drones are in the corresponding air waypoint
-        # TODO: Remove this when we have takeoff and land actions
-        new_at = copy(self.at)
-        for wp, objs in self.at.iteritems():
-            new_objs = copy(objs)
-            
-            # Only look for drones at ground waypoints
-            if wp not in self.objects['waypoint']:
-                continue
-            # Remove drone from current waypoint, create new air waypoint
-            for drone in self.objects['drone']:
-                if drone in new_objs:
-                    new_at[wp].remove(drone)
-                    new_at["a_%s" % wp].append(drone)
-
-        self.at = new_at
-
         empty_waypoints = []
         valid_occupants =  self.objects['drone'] + self.objects['turtlebot']
         for loc in self.objects['waypoint'] + self.objects['airwaypoint']:
@@ -235,7 +218,7 @@ class WorldState:
         action = action_req.action
         params = {p.key: p.value for p in action.parameters}
 
-        if action.name == 'goto':
+        if action.name == 'goto' or action.name == 'fly':
             for loc, objs in self.at.iteritems():
                 if params['agent'] in objs:
                     objs.remove(params['agent'])
@@ -245,13 +228,29 @@ class WorldState:
             self.at[params['ground']].remove(params['box'])
             self.carrying[params['drone']].append(params['box'])
 
-        elif action.name == 'hand-over':
+        elif action.name == 'hand-over-drone2bot':
             self.carrying[params['turtlebot']].append(params['box'])
             self.carrying[params['drone']].remove(params['box'])
+
+        elif action.name == 'hand-over-bot2drone':
+            self.carrying[params['drone']].append(params['box'])
+            self.carrying[params['turtlebot']].remove(params['box'])
 
         elif action.name == 'unload':
             self.carrying[params['drone']].remove(params['box'])
             self.rescued.append(params['person'])
+
+        elif action.name == 'takeoff':
+            for loc, objs in self.at.iteritems():
+                if params['drone'] in objs:
+                    objs.remove(params['drone'])
+            self.at[params['air']].append(params['drone'])
+
+        elif action.name == 'land':
+            for loc, objs in self.at.iteritems():
+                if params['drone'] in objs:
+                    objs.remove(params['drone'])
+            self.at[params['ground']].append(params['drone'])
 
         return ActionFinishedResponse()
 
@@ -268,6 +267,10 @@ class WorldState:
         print "Locations:"
         for wp, objs in self.at.iteritems():
             print "%s: %s" % (wp, ",".join(objs))
+        print "Carrying:"
+        for wp, objs in self.carrying.iteritems():
+            print "%s: %s" % (wp, ",".join(objs))
+
         print "--------------------------------"
 
     def spin(self):

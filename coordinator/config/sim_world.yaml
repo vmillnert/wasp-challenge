@@ -13,7 +13,7 @@ objects:
     - drone1
   turtlebot:
     - bot0
-    - bot1
+    #- bot1
   person:
     - person0
     - person1
@@ -27,9 +27,9 @@ at:
   depo: *boxes
   wp00:
     - person0
-    - bot0
   wp01:
     - person1
+    - bot0
   wp2:
     - drone0
   wp3:
