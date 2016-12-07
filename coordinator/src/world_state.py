@@ -245,6 +245,10 @@ class WorldState:
         return p_srv
 
     def action_finished_cb(self,action_req):
+        # No world update when using the primitive action feeder
+        if not self.use_rosplan:
+          return ActionFinishedResponse()
+          
         action = action_req.action
         params = {p.key: p.value for p in action.parameters}
 
