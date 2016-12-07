@@ -72,7 +72,7 @@ def locatedCallback(tagref):
     mat_map_to_odom = numpy.dot(mat_map, mat_odom_inv)
     trans = tf.transformations.translation_from_matrix(mat_map_to_odom)
     rot = tf.transformations.quaternion_from_matrix(mat_map_to_odom)
-   
+  
     lock.acquire() 
     key=tagref.global_frame+","+tagref.tag_frame+","+tagref.target_frame
     if not key in observation_history:
@@ -82,27 +82,34 @@ def locatedCallback(tagref):
         observation_history[key].pop(0)
     observation_history[key].append((trans,rot))
 
-    trans_list = map(lambda x : x[0] , observation_history[key])
-    rot_list = map(lambda x : x[1] , observation_history[key])
 
-    # Compute the 'distance' between the translations
-    trans_0 =trans_list[0]
-    trans_norm = map(lambda x: (numpy.linalg.norm(trans_0-x), x) , trans_list)
+    if len(observation_history[key]) == n_samples:
+      trans_list = map(lambda x : x[0] , observation_history[key])
+      rot_list = map(lambda x : x[1] , observation_history[key])
+
+      if not key in transforms:
+        # TODO: Now using known tag location, perhaps use an initial average
+        trans_0 = trans_gt
+        rot_0   = rot_gt
+      else:
+        trans_0 = transforms[key][2]
+        rot_0 = transforms[key][3]
+
+      trans_norm = map(lambda x: (numpy.linalg.norm(trans_0-x), x) , trans_list)
     
-    # compute the 'norms' (i.e. distance) between the quaternions
-    # the inner product between two quaternions q1 and q2 is cos(theta/2)
-    # where theta is the smalles arc between them. Hence the
-    # 'distance' between the two quaternions is defined as
-    # 2*acos(dot(q1,q2))
-    rot_0 = rot_list[0]
-    rot_norm = map(lambda x: (2*numpy.arccos(numpy.dot(rot_0, x)), x), rot_list)
+      # compute the 'norms' (i.e. distance) between the quaternions
+      # the inner product between two quaternions q1 and q2 is cos(theta/2)
+      # where theta is the smalles arc between them. Hence the
+      # 'distance' between the two quaternions is defined as
+      # 2*acos(dot(q1,q2))
+      rot_norm = map(lambda x: (2*numpy.arccos(numpy.dot(rot_0, x)), x), rot_list)
     
-    trans_norm = sorted(trans_norm, key=lambda x: x[0])
-    rot_norm = sorted(rot_norm, key=lambda x: x[0])
-    i = int(len(trans_norm)/2)
+      trans_norm = sorted(trans_norm, key=lambda x: x[0])
+      rot_norm = sorted(rot_norm, key=lambda x: x[0])
+      i = int(len(trans_norm)/2)
     
-    transforms[key] = (tagref.global_frame, tagref.target_frame, trans_norm[i][1], rot_norm[i][1], tagref.pose.header.stamp)
-    # CHANGE tagref.pose.header.stamp -> rospy.Time.now() ???
+      transforms[key] = (tagref.global_frame, tagref.target_frame, trans_norm[i][1], rot_norm[i][1], tagref.pose.header.stamp)
+      # CHANGE tagref.pose.header.stamp -> rospy.Time.now() ???
     lock.release()
 
   except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
