@@ -75,6 +75,11 @@ void WaspPanel::worldStatePlan() {
 void WaspPanel::sendPause() {
   std_msgs::String msg;
   msg.data = "pause";
+  if (pause_button_->text() == "KCL Pause") {
+    pause_button_->setText("KCL Resume");
+  } else {
+    pause_button_->setText("KCL Pause");
+  }
   planner_publisher_.publish(msg);
   ROS_INFO("\033[32m%s\033[0m", msg.data.c_str());
 }
