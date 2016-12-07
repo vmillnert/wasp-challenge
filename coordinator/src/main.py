@@ -44,6 +44,7 @@ class Action:
         self.wp = None
 
         for p in self.parameters:
+            rospy.loginfo('main.py: p.key: %s, p.value: %s  \n', p.key, p.value)
             if p.key == "agent" or p.key == "drone":
                 self.agent = p.value
             if p.key == "to":
