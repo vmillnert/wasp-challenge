@@ -510,6 +510,13 @@ class BebopController(Controller):
         self._takeoff_pub = rospy.Publisher(self._name+'/takeoff', Empty, queue_size=10)
         self._land_pub = rospy.Publisher(self._name+'/land', Empty, queue_size=10)
         self._cmd_vel_pub = rospy.Publisher(self._name+'/cmd_vel', Twist, queue_size=10)
+        self._camera_pub = rospy.Publisher(self._name+'/camera_control', Twist, queue_size=10)
+
+        # publish a command that lowers the camera angle
+        camera_angle = Twist()
+        camera_angle.angular.y = -60
+        rospy.sleep(0.5)
+        self._camera_pub.publish(camera_angle)
 
 
         #################
@@ -555,19 +562,21 @@ class BebopController(Controller):
     def set_goal(self, goal):
         # check if it for some reason is not given in 'odom'-frame
         # if not goal.header.frame_id == self._my_point.header.frame_id:
+        original_goal = deepcopy(goal)
+        
         if not goal.header.frame_id == self._my_pose.header.frame_id:
         # convert is to odom:
             try:
-                self.tfListener.waitForTransform(self._child_frame_id,
+                self.tfListener.waitForTransform(self._parent_frame_id,
                                                 goal.header.frame_id,
                                                 goal.header.stamp,
                                                 rospy.Duration(5))
 
-                goal = self.tfListener.transformPoint(self._child_frame_id,
+                goal = self.tfListener.transformPoint(self._parent_frame_id,
                                                      goal)
                 self.set_action_status(ActionStatus.STARTED)
-                rospy.sleep(1)
-                rospy.loginfo('%s: Got a new goal\n x: %.2f\n y: %.2f', self._name, goal.point.x, goal.point.y)
+                # rospy.sleep(1)
+                rospy.loginfo('%s: sucessfully converted the new goal into my base_link frame', self._name)
                 self._goal_point = deepcopy(goal)
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
                 rospy.loginfo(e)
@@ -586,7 +595,8 @@ class BebopController(Controller):
         # Now we now that it is in the correct frame
         self._goal_point = deepcopy(goal)
         self.set_action_status(ActionStatus.STARTED)
-        rospy.loginfo('%s: Got a new goal\n x: %.2f\n y: %.2f', self._name, goal.point.x, goal.point.y)
+        rospy.loginfo('%s: Got a new goal\n In ORIGINAL FRAME:\n  x: %.2f\n y: %.2f \n frame_id:%s \n IN MY FRAME:\n  x: %.2f\n y: %.2f \n frame_id:%s',
+                      self._name, original_goal.point.x, original_goal.point.y, original_goal.header.frame_id, goal.point.x, goal.point.y, goal.header.frame_id)
         rospy.loginfo('%s: Action_status: %d\n', self._name, self.get_action_status())
         # rospy.sleep(1)
 
@@ -739,6 +749,15 @@ class BebopController(Controller):
                                                                      self._my_pose.pose.orientation.z,
                                                                      self._my_pose.pose.orientation.w])[2])
             action_status = self.get_action_status()
+            rospy.loginfo('%s: START OF CONTROL LOOP\n action_status: %d \n', self._name, action_status)
+            rospy.loginfo('%s: \n goal\n x: %.2f\n y: %.2f\n z: %.2f\n my pos\n  x: %.2f\n y: %.2f\n z: %.2f\n ',
+                          self._name,
+                          xref,
+                          yref,
+                          zref,
+                          x,
+                          y,
+                          z)
 
             if self._control_mode == 'manual':
                 # Manual mode
@@ -782,6 +801,7 @@ class BebopController(Controller):
                 #     or (numpy.abs(zref-z) >  self._HEIGHT_TOL) \
                 #     or (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) > self._YAW_TOL):
                 if not self.goal_reached:
+
                     # Have some distance to the goal
 
                     # PID-control to make the bebop go to the desired
@@ -833,11 +853,14 @@ class BebopController(Controller):
                             self.set_action_status(ActionStatus.COMPLETED)
                             rospy.loginfo('%s: We have arrived at the goal sir!',
                                           self._name)
-                            rospy.loginfo('%s: \n Distance to goal\n x: %.2f\n y: %.2f\n z: %.2f\n',
+                            rospy.loginfo('%s: \n goal\n x: %.2f\n y: %.2f\n z: %.2f\n my pos\n  x: %.2f\n y: %.2f\n z: %.2f\n ',
                                           self._name,
-                                          xref-x,
-                                          yref-y,
-                                          zref-z)
+                                          xref,
+                                          yref,
+                                          zref,
+                                          x,
+                                          y,
+                                          z)
 
 
 
@@ -887,6 +910,12 @@ class BebopController(Controller):
             rospy.loginfo('%s: Got unknown command: %s \n', self._name, msg.data)
 
 
+    # check from the action server if the drone is airborne or not
+    def airborne(self):
+        height = deepcopy(self._my_pose.pose.position.z)
+        return height>1 # we're airborne if the height is greater than 1
+        
+
     # Make the drone takeoff
     # called from the Bebop Action Server
     def takeoff(self):
@@ -908,6 +937,7 @@ class BebopController(Controller):
         self.yPID.reset()
         self.zPID.reset()
         self.yawPID.reset()
+        
         self.set_action_status(ActionStatus.STARTED)
         self.landing = False
         ######################################
