@@ -34,6 +34,8 @@ protected Q_SLOTS:
   void sendPlan();
   void sendCancel();
   void sendPause();
+  void readWorldState();
+  void worldStatePlan();
   // Then we finish up with protected member variables.
 protected:
   // Start button
@@ -45,8 +47,18 @@ protected:
   // Pause button
   QPushButton* pause_button_;
 
+  // Read World State button
+  QPushButton* read_world_state_button_;
+
+  // World state plan button
+  QPushButton* world_state_plan_button_;
+
   // Publisher for the planning commands
   ros::Publisher planner_publisher_;
+
+  // ROS Service client for /world_state
+  ros::ServiceClient world_state_read_service_;
+  ros::ServiceClient world_state_plan_service_;
 
   // The ROS node handle.
   ros::NodeHandle nh_;

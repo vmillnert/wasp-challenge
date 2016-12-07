@@ -4,7 +4,7 @@
 ## First start with some standard catkin stuff.
 cmake_minimum_required(VERSION 2.8.3)
 project(operator_panel)
-find_package(catkin REQUIRED COMPONENTS rviz)
+find_package(catkin REQUIRED COMPONENTS rviz coordinator)
 catkin_package()
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})
