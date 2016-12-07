@@ -31,6 +31,9 @@ WaspPanel::WaspPanel(QWidget* parent )
   read_world_state_button_->setToolTip("Reads the world state again.");
   world_state_plan_button_->setToolTip("Fill the knowledge base. And plan.");
 
+  plan_button_->setEnabled(false);
+  cancel_button_->setEnabled(false);
+
   QHBoxLayout* h_layout = new QHBoxLayout;
 
   // Lay out the topic field above the control widget.
@@ -54,7 +57,7 @@ WaspPanel::WaspPanel(QWidget* parent )
   connect( read_world_state_button_, SIGNAL( clicked() ), this, SLOT( readWorldState() ));
   connect( world_state_plan_button_, SIGNAL( clicked() ), this, SLOT( worldStatePlan() ));
 
-  planner_publisher_ = nh_.advertise<std_msgs::String>( "/kcl_rosplan/planning_commands", 1 );
+  planner_publisher_ = nh_.advertise<std_msgs::String>( "/kcl_rosplan/planning_commands", 1 , false );
   world_state_read_service_ = nh_.serviceClient<std_srvs::Empty>("/world_state/read_world_config");
   world_state_plan_service_ = nh_.serviceClient<std_srvs::Empty>("/world_state/plan");
 
@@ -62,26 +65,39 @@ WaspPanel::WaspPanel(QWidget* parent )
 
 void WaspPanel::readWorldState() {
   std_srvs::Empty srv;
-  world_state_read_service_.call(srv);
-  ROS_INFO("\033[32mrosservice call /world_state/read_world_config\033[0m");
+  if(world_state_read_service_.call(srv)) {
+    ROS_INFO("\033[31mrosservice call /world_state/read_world_config\033[0m");
+  } else {
+    ROS_INFO("\033[31mFailed to call service /world_state/read_world_config.\033[0m Continue anyway.");
+  }
+
 }
 
 void WaspPanel::worldStatePlan() {
   std_srvs::Empty srv;
-  world_state_plan_service_.call(srv);
-  ROS_INFO("\033[32mrosservice call /world_state/plan\033[0m");
+  if(world_state_plan_service_.call(srv)) {
+    ROS_INFO("\033[31mrosservice call /world_state/plan\033[0m");
+  } else {
+    ROS_INFO("\033[31mFailed to call service /world_state/plan\033[0m Continue anyway.");
+  }
+
 }
 
 void WaspPanel::sendPause() {
   std_msgs::String msg;
   msg.data = "pause";
-  if (pause_button_->text() == "KCL Pause") {
-    pause_button_->setText("KCL Resume");
+
+  if (planner_publisher_.getNumSubscribers() > 0) {
+    planner_publisher_.publish(msg);
+    if (pause_button_->text() == "KCL Pause") {
+      pause_button_->setText("KCL Resume");
+    } else {
+      pause_button_->setText("KCL Pause");
+    }
+    ROS_INFO("\033[32m%s\033[0m", msg.data.c_str());
   } else {
-    pause_button_->setText("KCL Pause");
+    ROS_INFO("\033[31m%s FAILED! No Subscribers!\033[0m", msg.data.c_str());
   }
-  planner_publisher_.publish(msg);
-  ROS_INFO("\033[32m%s\033[0m", msg.data.c_str());
 }
 
 void WaspPanel::sendPlan()
