@@ -318,8 +318,8 @@ class WorldState:
 
         #Check for old objects, need to notify rviz to remove them
         old_objects = set(self.vis_markers).difference(active_objs)
-        #for old_obj in old_objects:
-        #    self._remove_visualization_marker(old_obj)
+        for old_obj in old_objects:
+            self._remove_visualization_marker(old_obj)
 
         #Create array message
         marray = MarkerArray()
@@ -332,7 +332,7 @@ class WorldState:
 
         # Remove old objects from dict
         for old_obj in old_objects:
-            self.vis_markers.remove(old_obj)
+            del self.vis_markers[old_obj]
 
     def _create_visualization_marker(self, obj, obj_type):
         # Text marker to display object name
