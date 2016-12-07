@@ -109,7 +109,6 @@ class BebopActionServer(object):
     def cb_takeoff(self, goal):
         rospy.loginfo("/BebopActionServer/cb_takeoff action_id %s", self.as_takeoff.current_goal.get_goal_id().id)
         self.controller.takeoff()
-        rospy.sleep(1)
         self.handle_feedback(self.as_takeoff)
 
 
