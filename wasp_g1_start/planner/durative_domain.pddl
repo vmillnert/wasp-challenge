@@ -118,15 +118,15 @@
                (at end (airborne ?drone)))
   )
 
-(:durative-action land
-  :parameters (?drone - drone ?air - airwaypoint ?ground - waypoint)
-  :duration (= ?duration 1)
-  :condition (and (over all (over ?air ?ground))
-                  (at start (at ?drone ?air)))
-  :effect (and (at end (at ?drone ?ground))
-               (at start (not (at ?drone ?air)))
-               (at start (not (airborne ?drone))))
-  )
+;(:durative-action land
+;  :parameters (?drone - drone ?air - airwaypoint ?ground - waypoint)
+;  :duration (= ?duration 1)
+;  :condition (and (over all (over ?air ?ground))
+;                  (at start (at ?drone ?air)))
+;  :effect (and (at end (at ?drone ?ground))
+;               (at start (not (at ?drone ?air)))
+;               (at start (not (airborne ?drone))))
+;  )
 )
 
 

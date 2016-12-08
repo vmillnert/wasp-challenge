@@ -44,7 +44,7 @@ class Action:
         self.wp = None
 
         for p in self.parameters:
-            rospy.loginfo('main.py: p.key: %s, p.value: %s  \n', p.key, p.value)
+            rospy.logdebug('main.py: p.key: %s, p.value: %s  \n', p.key, p.value)
             if p.key == "agent" or p.key == "drone":
                 self.agent = p.value
             if p.key == "to":
@@ -175,7 +175,7 @@ class Coordinator:
             client.ac = self.action_load(action)
           elif (msg.name == 'hand-over-drone2bot'):
             client.ac = self.action_unload(action)
-          elif (msg.name == 'hand-over-bot2drone'): 
+          elif (msg.name == 'hand-over-bot2drone'):
             client.ac = self.action_load(action)
           else:
             rospy.loginfo("No action called %s for agent %s", msg.name, msg.agent)
@@ -215,7 +215,7 @@ class Coordinator:
 
 
     def action_load(self, action):
-        rospy.loginfo('/coordinator/action_load for %s', action.agent)
+        rospy.loginfo('/coordinator/action_load for %s. Action ID: %f', action.agent, action.action_id)
         action_id = action.action_id
         feedback_msg = ActionFeedback(action_id=action_id, status="action enabled")
         ac = self.clients[action.agent].actions['load']
@@ -242,7 +242,7 @@ class Coordinator:
 
 
     def action_goto(self, action):
-    	rospy.loginfo('/coordinator/action_goto for %s', action.agent)
+    	rospy.loginfo('/coordinator/action_goto for %s (action ID: %f)', action.agent, action.action_id)
         parameters = action.parameters
         action_id = action.action_id
         agent = action.agent

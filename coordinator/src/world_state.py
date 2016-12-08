@@ -27,7 +27,7 @@ class KnowledgeUpdateServiceEnum:
 
 class WorldState:
     def __init__(self):
-        
+
         # Initiate node
         self.node_name = "world_state"
         rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO)
@@ -78,7 +78,7 @@ class WorldState:
         self.action_finished_service = rospy.Service('~action_finished', ActionFinished, self.action_finished_cb)
         self.read_config_service = rospy.Service('~read_world_config', Empty, self.read_world_config_cb)
 
-    
+
     def read_world_config_cb(self, request):
         self.read_world_config()
         return EmptyResponse()
@@ -91,9 +91,9 @@ class WorldState:
         #Load yaml file
         with open(self.world_config_file) as f:
             yaml_world = yaml.load(f)
-        self.objects = yaml_world['objects']
-        self.at = yaml_world['at']
-        self.waypoint_positions = yaml_world['waypoints']
+        self.objects = deepcopy(yaml_world['objects'])
+        self.at = deepcopy(yaml_world['at'])
+        self.waypoint_positions = deepcopy(yaml_world['waypoints'])
 
         # Add corresponding air waypoints
         self.objects['airwaypoint'] = []
@@ -115,7 +115,7 @@ class WorldState:
                 self.at[wp] = []
 
         rospy.loginfo('/%s/read_world_config/World config file %s, has been read.' % (self.node_name, self.world_config_file))
-        
+
         # TODO: Move to topics instead. Use latch and only publish a new topic when there is a change
         rospy.set_param('/available_drones', self.objects['drone'])
         if 'turtlebot' in self.objects:
@@ -213,7 +213,7 @@ class WorldState:
         p1 = self.waypoint_positions[wp1]
         p2 = self.waypoint_positions[wp2]
         d = sqrt((p1['x'] - p2['x'])**2 + (p1['y'] - p2['y'])**2)
-        
+
         return d
 
     def get_waypoint_position(self,wp_req):
@@ -229,7 +229,7 @@ class WorldState:
         # No world update when using the primitive action feeder
         if not self.use_rosplan:
           return ActionFinishedResponse()
-          
+
         action = action_req.action
         params = {p.key: p.value for p in action.parameters}
 
@@ -358,7 +358,7 @@ class WorldState:
 
         #Set position, depends on type
         if obj_type  in ["drone", "turtlebot"]:
-            text_marker.header.frame_id = "/%s/base_link" % obj
+            text_marker.header.frame_id = "/%s/base_link" % obj if obj_type == "drone" else "/base_link"
             text_marker.frame_locked = True
             text_marker.pose.position.x = 0.0
             text_marker.pose.position.y = 0.0
