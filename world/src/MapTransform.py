@@ -144,7 +144,7 @@ def startMapTransform():
   global observation_history # A dictionary of last observation for every landmark to publish
   global n_samples # Number of samples for median filter
   lock = Lock()
-  n_samples = 7
+  n_samples = 31
   transforms = {}
   broadcaster = tf.TransformBroadcaster()
   observation_history = {}
