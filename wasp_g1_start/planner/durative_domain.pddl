@@ -62,7 +62,7 @@
                   (over all (airborne ?drone)))
   :effect (and (at start (not (at ?box ?ground)))
                (at end (carrying ?drone ?box))
-               (at end (not (empty ?drone))))
+               (at start (not (empty ?drone))))
   )
 
 (:durative-action hand-over-drone2bot
@@ -74,10 +74,10 @@
                   (at start (carrying ?drone ?box))
                   (at start (empty ?turtlebot))
                   (over all (airborne ?drone)))
-  :effect (and (at end (not (carrying ?drone ?box)))
+  :effect (and (at start (not (carrying ?drone ?box)))
                (at end (empty ?drone))
                (at end (carrying ?turtlebot ?box))
-               (at end (not (empty ?turtlebot))))
+               (at start (not (empty ?turtlebot))))
   )
 
 (:durative-action hand-over-bot2drone
@@ -89,10 +89,10 @@
                   (at start (carrying ?turtlebot ?box))
                   (at start (empty ?drone))
                   (over all (airborne ?drone)))
-  :effect (and (at end (not (carrying ?turtlebot ?box)))
+  :effect (and (at start (not (carrying ?turtlebot ?box)))
                (at end (empty ?turtlebot))
                (at end (carrying ?drone ?box))
-               (at end (not (empty ?drone))))
+               (at start (not (empty ?drone))))
   )
 
 (:durative-action unload
@@ -103,7 +103,7 @@
                   (over all (at ?drone ?air))
                   (over all (at ?person ?ground))
                   (over all (airborne ?drone)))
-  :effect (and (at end (not (carrying ?drone ?box)))
+  :effect (and (at start (not (carrying ?drone ?box)))
                (at end (empty ?drone))
                (at end (handled ?person)))
   )
