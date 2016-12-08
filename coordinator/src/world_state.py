@@ -142,8 +142,8 @@ class WorldState:
         valid_occupants =  self.objects['drone'] + self.objects['turtlebot']
         for loc in self.objects['waypoint'] + self.objects['airwaypoint']:
             valid = False
-            if loc in self.objects:
-                for o in self.objects[loc]:
+            if loc in self.at:
+                for o in self.at[loc]:
                     valid = True if (o in valid_occupants) else valid
 
             if not valid:
