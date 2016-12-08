@@ -1,0 +1,13 @@
+<launch>
+<!--
+  <arg name="rectnamespace" value="/bebop" />
+  <include file="$(find world)/launch/start_rectify.launch"/>
+  <arg name="tagimage" value="bebop/image_rect" />
+  <arg name="tagcaminfo" value="bebop/camera_info" />
+-->
+
+  <include file="$(find world)/launch/start_april_tags.launch"/>
+  <include file="$(find world)/launch/start_transform.launch"/>
+  <include file="$(find world)/launch/start_landmark_detect.launch"/>
+  <include file="$(find world)/launch/start_people_detect.launch"/>
+</launch>
