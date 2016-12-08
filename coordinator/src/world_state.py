@@ -89,6 +89,9 @@ class WorldState:
             # No config file, start with empty world
             return False
 
+        # Reset markers for rviz
+        self.vis_markers = {}
+
         #Load yaml file
         with open(self.world_config_file) as f:
             yaml_world = yaml.load(f)
@@ -329,7 +332,7 @@ class WorldState:
         #Go through locations
         for obj_type, objs in self.objects.iteritems():
             # Skip waypoints
-            if obj_type in ['airwaypoint', 'waypoint']:
+            if obj_type in ['airwaypoint']:
                 continue
 
             for obj in objs:
@@ -374,9 +377,9 @@ class WorldState:
         text_marker.pose.orientation.z = 0.0
         text_marker.pose.orientation.w = 1.0
         text_marker.color.a = 1.0
-        text_marker.color.r = 0.0
-        text_marker.color.g = 0.0
-        text_marker.color.b = 0.0
+        text_marker.color.r = 1.0
+        text_marker.color.g = 1.0
+        text_marker.color.b = 1.0
         text_marker.scale.x = 0.2
         text_marker.scale.y = 0.2
         text_marker.scale.z = 0.1
@@ -388,12 +391,18 @@ class WorldState:
             text_marker.frame_locked = True
             text_marker.pose.position.x = 0.0
             text_marker.pose.position.y = 0.0
-            text_marker.pose.position.z = 0.1
+            text_marker.pose.position.z = 0.5*text_marker.scale.z
         elif obj_type == "person":
             wp_pos = self.waypoint_positions[self.obj2loc[obj]]
             text_marker.pose.position.x = wp_pos['x']
             text_marker.pose.position.y = wp_pos['y']
-            text_marker.pose.position.z = 0.1
+            text_marker.pose.position.z = 0.5*text_marker.scale.z
+        elif obj_type == "waypoint":
+            wp_pos = self.waypoint_positions[obj]
+            text_marker.pose.position.x = wp_pos['x']
+            text_marker.pose.position.y = wp_pos['y']
+            text_marker.pose.position.z = 0.5*text_marker.scale.z
+            text_marker.color.a = 0.2
 
         #Early exit for types that only needs text
         if obj_type == "turtlebot":
@@ -406,7 +415,7 @@ class WorldState:
         marker.scale.x = 0.2
         marker.scale.y = 0.2
         marker.scale.z = 0.1
-        marker.color.a = 0.5
+        marker.color.a = 0.8
 
         if obj_type  == "drone":
             marker.type = Marker.SPHERE
@@ -418,6 +427,15 @@ class WorldState:
             marker.color.r = 0.0
             marker.color.g = 1.0
             marker.color.b = 0.0
+        elif obj_type == "waypoint":
+            marker.type = Marker.CYLINDER
+            marker.color.r = 0.0
+            marker.color.g = 0.0
+            marker.color.b = 1.0
+            marker.scale.x = 0.4
+            marker.scale.y = 0.4
+            marker.scale.z = 0.01
+            marker.color.a = 0.2
         elif obj_type == "person":
             marker.type = Marker.CYLINDER
             #Set color in update step
@@ -440,7 +458,8 @@ class WorldState:
 
                 #Box with agent
                 else:
-                    marker.header.frame_id = "/%s/base_link" % obj
+                    agent = self.obj2loc[obj]
+                    marker.header.frame_id = "/%s/base_link" % agent if agent in self.objects['drone'] else "/base_link"
                     marker.frame_locked = True
                     marker.pose.position.x = 0.0
                     marker.pose.position.y = 0.0
