@@ -17,6 +17,7 @@
 [submodule "rosplan"]
 	path = rosplan
 	url = https://github.com/DavidGillsjo/ROSPlan.git
+	branch = wasp_challenge
 [submodule "ardrone_autonomy"]
 	path = ardrone_autonomy
 	url = https://github.com/AutonomyLab/ardrone_autonomy.git
