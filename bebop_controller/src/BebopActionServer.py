@@ -78,6 +78,10 @@ class BebopActionServer(object):
 
         rospy.loginfo("%s running", rospy.get_name())
 
+    # Loop if manual mode is set waiting for automatic to be reissued
+    def wait_manual_mode(self, action, goal):
+      while self.controller.isManualMode() and not rospy.is_shutdown():
+          self.loop_rate.sleep()
 
     def spin(self):
         self.controller.run()
@@ -85,11 +89,13 @@ class BebopActionServer(object):
 
 
     def cb_load(self, goal):
+        self.wait_manual_mode('load', goal)
         rospy.loginfo("/BebopActionServer/cb_load action_id %s", self.as_load.current_goal.get_goal_id().id)
         self.mark_load_event(self.as_load)
 
 
     def cb_land(self, goal):
+        self.wait_manual_mode('land', goal)
         rospy.loginfo("/BebopActionServer/cb_land action_id %s", self.as_land.current_goal.get_goal_id().id)
         self.controller.land()
         rospy.sleep(1)
@@ -97,22 +103,28 @@ class BebopActionServer(object):
 
 
     def cb_follow(self, goal):
+        self.wait_manual_mode('follow', goal)
         rospy.loginfo("/BebopActionServer/cb_follow action_id %s", self.as_follow.current_goal.get_goal_id().id)
-        self.as_follow.set_succeeded()
+        if not self.controller.isManulMode():
+          self.as_follow.set_succeeded()
 
 
     def cb_unload(self, goal):
+        self.wait_manual_mode('unload', goal)
         rospy.loginfo("/BebopActionServer/cb_unload action_id %s", self.as_unload.current_goal.get_goal_id().id)
         self.mark_load_event(self.as_unload)
 
 
     def cb_takeoff(self, goal):
+        self.wait_manual_mode('takeoff', goal)
         rospy.loginfo("/BebopActionServer/cb_takeoff action_id %s", self.as_takeoff.current_goal.get_goal_id().id)
         self.controller.takeoff()
         self.handle_feedback(self.as_takeoff)
 
 
     def cb_move_base(self, goal):
+        self.wait_manual_mode('move', goal)
+
         if not self.controller.airborne():
           self.controller.takeoff()
           status, preempted = self.handle_feedback(self.as_move, send_result = False)
@@ -154,6 +166,11 @@ class BebopActionServer(object):
 
         status = self.controller.get_action_status()
         if send_result:
+            # If operator interrupted then we expect the operator to leave the drone in a
+            # good state. The plannner will send a new action which will wait until
+            # automatic mode is reissued.
+            if status == ActionStatus.FAILED and self.controller.isManualMode():
+              status = ActionStatus.COMPLETED
             self.send_result(actionserver, status, preempted)
 
         return status, preempted

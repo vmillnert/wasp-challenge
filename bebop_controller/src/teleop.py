@@ -125,7 +125,7 @@ def run():
                 # Key is pressed
                 if event.type == pygame.KEYDOWN:
                     key  = pygame.key.name(event.key)
-                    rospy.loginfo('%s is pressed' % key)
+                    #rospy.loginfo('%s is pressed' % key)
                     if key in moveBindings.keys():
                         x += moveBindings[key][0]
                         y += moveBindings[key][1]
@@ -169,8 +169,7 @@ def run():
                 # Key is released
                 if event.type == pygame.KEYUP:
                     key = pygame.key.name(event.key)
-                    print('%s is released' % key)
-                    rospy.loginfo('%s is released' % key)
+                    #rospy.loginfo('%s is released' % key)
                     if key in moveBindings.keys():
                         x -= moveBindings[key][0]
                         y -= moveBindings[key][1]
