@@ -39,7 +39,7 @@ def locatedCallback(tagref):
   global observation_history # A dictionary of last observation for every landmark to publish
   global n_samples # Number of samples for median filter
   try:
-    rospy.loginfo('Request time: '+ str(tagref.pose.header.stamp))
+    #rospy.loginfo('Request time: '+ str(tagref.pose.header.stamp))
     listener.waitForTransform(tagref.global_frame, tagref.tag_frame,
                               tagref.pose.header.stamp, rospy.Duration(2))
     # CHANGE tagref.pose.header.stamp -> rospy.Time.now() ???

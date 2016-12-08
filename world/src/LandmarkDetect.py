@@ -17,7 +17,12 @@ def tagCallback(data):
       tagref.tag_frame = "landmark"+str(detection.id)
       tagref.target_frame = agent_frame
       tagref.pose = detection.pose
-      rospy.loginfo("Landmark {} detected at {} for {}".format(detection.id, detection.pose, agent_frame))
+      q = detection.pose.pose.orientation
+      p = detection.pose.pose.position
+      e =tf.transformations.euler_from_quaternion((q.x,q.y,q.z,q.w)) 
+      rospy.loginfo("Landmark {} detected at {:5.2f},{:5.2f},{:5.2f} {:5.2f},{:5.2f},{:5.2f} for {}".format(
+        detection.id, p.x, p.y, p.z, e[0], e[1], e[2],
+        agent_frame))
       pub.publish(tagref)
 
 
