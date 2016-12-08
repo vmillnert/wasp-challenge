@@ -16,7 +16,7 @@
   <!-- Start the World state node -->
   <node pkg="coordinator" type="world_state.py" name="world_state" output="screen">
   	<param name="use_rosplan" type="boolean" value="True" />
-  	<param name="world_config_file" type="string" value="$(find coordinator)/config/test_world.yaml" />
+  	<param name="world_config_file" type="string" value="$(find coordinator)/config/$(optenv PLANNER_WORLD test_world.yaml)" />
   </node>
 
   <!-- Start the Action feeder 
@@ -30,7 +30,7 @@
 	<param name="/rosplan/planner_path" value="$(find rosplan_config)/planner/bin/" />
 
 	<!-- domain file -->
-	<param name="/rosplan/domain_path" value="$(find wasp_g1_start)/planner/durative_domain.pddl" />
+	<param name="/rosplan/domain_path" value="$(find wasp_g1_start)/planner/$(optenv PLANNER_DOMAIN durative_domain.pddl)" />
 
 	<!-- knowledge base -->
 	<node name="rosplan_knowledge_base" pkg="rosplan_knowledge_base" type="knowledgeBase" respawn="false" output="screen" />

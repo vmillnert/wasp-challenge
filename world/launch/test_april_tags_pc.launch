@@ -1,0 +1,9 @@
+<!---
+  Don't forget to calibrate your camera!
+-->
+<launch>
+  <include file="$(find world)/launch/start_april_tags.launch">
+    <arg name="tagimage" default="/image_raw" />
+    <arg name="tagcaminfo" default="/camera_info" />
+  </include>
+</launch>

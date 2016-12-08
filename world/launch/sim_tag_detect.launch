@@ -1,0 +1,9 @@
+<launch>
+  <node name="persondetect" pkg="uvc_camera" type="uvc_camera_node"/>
+  <include file="$(find world)/launch/start_april_tags.launch">
+    <arg name="tagimage" default="/image_raw" />
+    <arg name="tagcaminfo" default="/camera_info" />
+  </include>
+  <include file="$(find world)/launch/start_people_detect.launch"/>
+  <include file="$(find world)/launch/start_landmark_detect.launch"/>
+</launch>
