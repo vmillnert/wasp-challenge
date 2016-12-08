@@ -1,6 +1,7 @@
 <launch>
   <arg name="world_file"  default="$(find turtlebot_gazebo)/worlds/playground.world"/>
 <!--  <arg name="world_file"  default="$(find turtlebot_gazebo)/worlds/corridor.world"/> -->
+<!--  <arg name="world_file" default="$(find thinc_sim_gazebo)/worlds/ardrone_testworld.world"/> -->
 
   <arg name="gui" default="true"/>
 

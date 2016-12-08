@@ -1,0 +1,12 @@
+<launch>
+  <node pkg="world" type="LandmarkDetect.py" name="landmark_detect" output="screen">
+    <!-- List landmark april tag ids. Define a transform in the map tree which is named 'landmark#' where
+         # is the numbers in the following string. -->
+    <param name="tags" type="string" value="39 40 41 42"/>
+    <!--
+        The frame which to reposition when a landmark is observed 
+        Note: This is the name of the real world agent tf -->
+    <param name="agent_frame" type="string" value="bebop/odom"/>
+  </node>
+    <node pkg="tf" type="static_transform_publisher" name="landmark39" args="0.4 -1.3 0.1 0 0 0 map landmark39 100"/>
+</launch>

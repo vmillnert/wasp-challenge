@@ -66,11 +66,17 @@ class Controller:
 
     self.tfListener = tf.TransformListener()
 
+  def getName(self):
+    return self._name
+
   def airborne(self):
     raise "Airborne not implemented in controller"
 
   def set_yaw(self, yaw):
     pass
+
+  def isManualMode(self):
+    return self._control_mode == 'manual'
 
   def set_height(self, height):
     print("N.A. set_height")
@@ -220,6 +226,7 @@ class ARDroneSimController(Controller):
     self.velo = [0.0, 0.0, 0.0] # TODO: Listen to Navdata
     self.navdata = False
     self.setpoint_height = 1.5 + 0.5 * int(name[-1])
+    self.enableStatePrint = False
 
   # Transforms world position to map
   def update_pose(self):
@@ -263,6 +270,8 @@ class ARDroneSimController(Controller):
     return s == ARDroneState['INITED'] or s == ARDroneState['LANDED']
 
   def printstate(self):
+    if not self.enableStatePrint:
+      return
     print("{} is {} [{}]\n  pose [P({:4.1f},{:4.1f},{:4.1f}) R({:4.1f},{:4.1f},{:4.1f},{:4.1f}) Y({:4.3f})]\n  velocity ({:3.1f},{:3.1f},{:3.1f} [S({:3.1f},{:3.1f},{:3.1f})])".format(self._name,
       ARDroneState.keys()[ARDroneState.values().index(self.navdata.state)], self._control_mode,
       self.pose.position.x, self.pose.position.y, self.pose.position.z, 
@@ -431,10 +440,12 @@ class ARDroneSimController(Controller):
     elif msg.data == "land":
       self.land()
     elif msg.data == "manual":
-      rospy.loginfo('%s: Swicthed to manual mode' % self._name)
+      if not self.isManualMode():
+        rospy.loginfo('%s: Swicthed to manual mode' % self._name)
       self._control_mode = 'manual'
     elif msg.data == "auto":
-      rospy.loginfo('%s: Swicthed to automatic mode' % self._name)
+      if self.isManualMode():
+        rospy.loginfo('%s: Swicthed to automatic mode' % self._name)
       self._control_mode = 'auto'
     else:
       rospy.loginfo('%s: Got unknown command: %s \n', self._name, msg.data)
@@ -447,7 +458,7 @@ class ARDroneSimController(Controller):
 
 class BebopController(Controller):
 
-    _MAX_VEL = 0.4 # Maximum velocity for the drone in any one
+    _MAX_VEL = 0.2 # Maximum velocity for the drone in any one
                    # direction
 
     _TOLERANCE = 0.3 # Tolerance for the Go-to-goal controller

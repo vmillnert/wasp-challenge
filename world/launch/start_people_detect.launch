@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="world" type="PeopleDetect.py" name="people_detect" output="screen">
+    <param name="tags" type="string" value="29"/>
+  </node>
+</launch>

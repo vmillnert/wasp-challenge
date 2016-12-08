@@ -23,7 +23,12 @@
 
     <!-- Describe the tags -->
     <rosparam param="tag_descriptions">[
-      {id: 0, size: 0.168}
+      {id: 0, size: 0.168},
+      {id: 29, size: 0.168},
+      {id: 39, size: 0.168},
+      {id: 40, size: 0.168},
+      {id: 41, size: 0.168},
+      {id: 42, size: 0.168}
     ]
     </rosparam>
   </node>

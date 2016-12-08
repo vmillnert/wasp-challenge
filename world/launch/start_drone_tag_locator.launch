@@ -8,4 +8,6 @@
 
   <include file="$(find world)/launch/start_april_tags.launch"/>
   <include file="$(find world)/launch/start_transform.launch"/>
+  <include file="$(find world)/launch/start_landmark_detect.launch"/>
+  <include file="$(find world)/launch/start_people_detect.launch"/>
 </launch>
