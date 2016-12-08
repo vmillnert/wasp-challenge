@@ -66,6 +66,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    WaypointPosition.srv
    ActionFinished.srv
+   AddObject.srv
  )
 
 ## Generate actions in the 'action' folder

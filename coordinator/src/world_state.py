@@ -74,6 +74,7 @@ class WorldState:
 
         # Setup own services for coordinator
         self.waypoint_pos_service = rospy.Service('~get_waypoint_position', WaypointPosition, self.get_waypoint_position)
+        self.add_object_service = rospy.Service('~add_object', AddObject, self.add_object_cb)
         self.replan_service = rospy.Service('~plan', Empty, self.start_planner)
         self.action_finished_service = rospy.Service('~action_finished', ActionFinished, self.action_finished_cb)
         self.read_config_service = rospy.Service('~read_world_config', Empty, self.read_world_config_cb)
@@ -87,6 +88,9 @@ class WorldState:
         if self.world_config_file == None:
             # No config file, start with empty world
             return False
+
+        # Reset markers for rviz
+        self.vis_markers = {}
 
         #Load yaml file
         with open(self.world_config_file) as f:
@@ -279,6 +283,30 @@ class WorldState:
 
         return ActionFinishedResponse()
 
+    def add_object_cb(self,request):
+        #Check if object exists
+        if request.name in self.obj2loc:
+            return AddObjectResponse()
+
+        wp_name = request.name if request.type == "waypoint" else "%s_wp" % request.name
+
+        self.objects['waypoint'].append(wp_name)
+        self.waypoint_positions[wp_name] = {'x': request.x, 'y': request.y}
+        self.at[wp_name] = []
+        air_wp = "a_%s" % request.name
+        self.objects['airwaypoint'].append(air_wp)
+        self.waypoint_positions[air_wp] = {'x': request.x, 'y': request.y}
+        self.at[air_wp] = []
+
+        if request.type != "waypoint":
+            self.objects[request.type].append(request.name)
+            self.at[wp_name].append(request.name)
+
+        self._generate_obj2loc()
+        self.visualize_state()
+
+        return AddObjectResponse()
+
     def start_planner(self, request):
         rospy.loginfo('/%s/start_planner/ Generating knowledge base and starting planner' % self.node_name)
         self.generate_knowledge_base()
@@ -304,7 +332,7 @@ class WorldState:
         #Go through locations
         for obj_type, objs in self.objects.iteritems():
             # Skip waypoints
-            if obj_type in ['airwaypoint', 'waypoint']:
+            if obj_type in ['airwaypoint']:
                 continue
 
             for obj in objs:
@@ -349,12 +377,13 @@ class WorldState:
         text_marker.pose.orientation.z = 0.0
         text_marker.pose.orientation.w = 1.0
         text_marker.color.a = 1.0
-        text_marker.color.r = 0.0
-        text_marker.color.g = 0.0
-        text_marker.color.b = 0.0
+        text_marker.color.r = 1.0
+        text_marker.color.g = 1.0
+        text_marker.color.b = 1.0
         text_marker.scale.x = 0.2
         text_marker.scale.y = 0.2
         text_marker.scale.z = 0.1
+        text_marker.lifetime = rospy.Time(3)
 
         #Set position, depends on type
         if obj_type  in ["drone", "turtlebot"]:
@@ -362,12 +391,18 @@ class WorldState:
             text_marker.frame_locked = True
             text_marker.pose.position.x = 0.0
             text_marker.pose.position.y = 0.0
-            text_marker.pose.position.z = 0.1
+            text_marker.pose.position.z = 0.5*text_marker.scale.z
         elif obj_type == "person":
             wp_pos = self.waypoint_positions[self.obj2loc[obj]]
             text_marker.pose.position.x = wp_pos['x']
             text_marker.pose.position.y = wp_pos['y']
-            text_marker.pose.position.z = 0.1
+            text_marker.pose.position.z = 0.5*text_marker.scale.z
+        elif obj_type == "waypoint":
+            wp_pos = self.waypoint_positions[obj]
+            text_marker.pose.position.x = wp_pos['x']
+            text_marker.pose.position.y = wp_pos['y']
+            text_marker.pose.position.z = 0.5*text_marker.scale.z
+            text_marker.color.a = 0.2
 
         #Early exit for types that only needs text
         if obj_type == "turtlebot":
@@ -380,7 +415,7 @@ class WorldState:
         marker.scale.x = 0.2
         marker.scale.y = 0.2
         marker.scale.z = 0.1
-        marker.color.a = 0.5
+        marker.color.a = 0.8
 
         if obj_type  == "drone":
             marker.type = Marker.SPHERE
@@ -392,6 +427,15 @@ class WorldState:
             marker.color.r = 0.0
             marker.color.g = 1.0
             marker.color.b = 0.0
+        elif obj_type == "waypoint":
+            marker.type = Marker.CYLINDER
+            marker.color.r = 0.0
+            marker.color.g = 0.0
+            marker.color.b = 1.0
+            marker.scale.x = 0.4
+            marker.scale.y = 0.4
+            marker.scale.z = 0.01
+            marker.color.a = 0.2
         elif obj_type == "person":
             marker.type = Marker.CYLINDER
             #Set color in update step
@@ -414,7 +458,8 @@ class WorldState:
 
                 #Box with agent
                 else:
-                    marker.header.frame_id = "/%s/base_link" % obj
+                    agent = self.obj2loc[obj]
+                    marker.header.frame_id = "/%s/base_link" % agent if agent in self.objects['drone'] else "/base_link"
                     marker.frame_locked = True
                     marker.pose.position.x = 0.0
                     marker.pose.position.y = 0.0
@@ -444,9 +489,16 @@ class WorldState:
                 self.obj2loc[obj] = agent
 
     def spin(self):
-        rospy.spin()
+        rate = rospy.Rate(1) # 10hz
+        while not rospy.is_shutdown():
+            self.visualize_state()
+            rate.sleep()
 
 
 if __name__ == '__main__':
     ws = WorldState()
-    ws.spin()
+    try:
+        ws.spin()
+    except rospy.ROSInterruptException:
+        pass
+
