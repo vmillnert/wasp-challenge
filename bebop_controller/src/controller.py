@@ -447,7 +447,7 @@ class ARDroneSimController(Controller):
 
 class BebopController(Controller):
 
-    _MAX_VEL = 0.4 # Maximum velocity for the drone in any one
+    _MAX_VEL = 0.2 # Maximum velocity for the drone in any one
                    # direction
 
     _TOLERANCE = 0.3 # Tolerance for the Go-to-goal controller
