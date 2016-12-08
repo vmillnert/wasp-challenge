@@ -1,5 +1,5 @@
 <launch>
-  <!-- Start the Bebop Action Server 
+  <!-- Start the Bebop Action Server
   <node name="bebop_action_server" pkg="bebop_controller" type="BebopActionServer.py" output="screen" ns='drone0'>
   <param name="test_mode" type="boolean" value="true" />
   </node>
@@ -9,7 +9,7 @@
   </node>
 -->
   <!-- Start the Coordinator -->
-  <node pkg="coordinator" type="main.py" name="coordinator" args="$(find coordinator)/waypoints.csv" output="screen">
+  <node pkg="coordinator" type="main.py" name="coordinator" output="screen">
   <param name="coordinate_frame" type="string" value="map" />
   </node>
 
@@ -19,7 +19,7 @@
   	<param name="world_config_file" type="string" value="$(find coordinator)/config/$(optenv PLANNER_WORLD test_world.yaml)" />
   </node>
 
-  <!-- Start the Action feeder 
+  <!-- Start the Action feeder
   <node pkg="coordinator" type="action_feeder.py" name="action_feeder" args="$(find coordinator)/actions_bebop.csv" output="screen">
   </node>
   -->
@@ -54,6 +54,6 @@
 		<param name="max_dispatch_attempts" value="2" />
 	</node>
 
-  
+
 
 </launch>

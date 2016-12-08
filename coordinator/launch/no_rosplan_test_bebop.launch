@@ -6,7 +6,7 @@
   <node name="bebop_teleop" pkg="bebop_controller" type="teleop.py" output="screen" ns="/bebop">
   </node>
 
-    <node pkg="coordinator" type="main.py" name="coordinator" args="$(find coordinator)/waypoints.csv" output="screen">
+    <node pkg="coordinator" type="main.py" name="coordinator" output="screen">
   <param name="coordinate_frame" type="string" value="map" />
   </node>
 
@@ -14,7 +14,7 @@
   	<param name="use_rosplan" type="boolean" value="False" />
   	<param name="world_config_file" type="string" value="$(find coordinator)/config/test_bebop.yaml" />
   </node>
-  
+
   <node pkg="coordinator" type="action_feeder.py" name="action_feeder" args="$(find coordinator)/actions.csv" output="screen">
   </node>
 </launch>
