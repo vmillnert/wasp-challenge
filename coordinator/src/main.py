@@ -107,12 +107,12 @@ class DroneClient(Client):
     }
 
 class Coordinator:
-    def __init__(self, wp_file):
+    def __init__(self):
         self.clients = {}
 
         rospy.init_node('coordinator', anonymous=True, log_level=rospy.INFO)
 
-        rospy.loginfo('/coordinator/__init__/ - Using waypoints from %s', wp_file)
+        rospy.loginfo('/coordinator/__init__/')
 
         # Set up Publisher
         self.feedback_pub = rospy.Publisher("/kcl_rosplan/action_feedback", ActionFeedback, queue_size=10)
@@ -307,8 +307,5 @@ class Coordinator:
         r.sleep()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("usage: coordinator.py waypoint_file")
-    else:
-        coordinator = Coordinator(sys.argv[1])
-        coordinator.spin()
+    coordinator = Coordinator()
+    coordinator.spin()
