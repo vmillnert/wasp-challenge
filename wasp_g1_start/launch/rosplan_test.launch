@@ -20,7 +20,7 @@
   </node>
 
   <!-- Start the Action feeder
-  <node pkg="coordinator" type="action_feeder.py" name="action_feeder" args="$(find coordinator)/actions_bebop.csv" output="screen">
+  <node pkg="coordinator" type="action_feeder.py" name="action_feeder" args="$(find coordinator)/actionsequences/actions_bebop.csv" output="screen">
   </node>
   -->
 
