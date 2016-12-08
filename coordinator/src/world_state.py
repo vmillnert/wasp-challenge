@@ -358,7 +358,7 @@ class WorldState:
 
         #Set position, depends on type
         if obj_type  in ["drone", "turtlebot"]:
-            text_marker.header.frame_id = "/%s/base_link" % obj
+            text_marker.header.frame_id = "/%s/base_link" % obj if obj_type == "drone" else "/base_link"
             text_marker.frame_locked = True
             text_marker.pose.position.x = 0.0
             text_marker.pose.position.y = 0.0
