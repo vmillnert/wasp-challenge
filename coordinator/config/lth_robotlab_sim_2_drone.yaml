@@ -1,0 +1,58 @@
+# List of objects in the world, on the form: 'type': [object names]
+objects:
+  waypoint:
+    - depo
+    - drone_start0
+    - drone_start1
+    - bot_start
+    - wp_person0
+    - wp_person1
+  drone:
+    - drone0
+    - drone1
+  turtlebot:
+    - turtle
+  person:
+    - person0
+    - person1
+  box: &boxes
+    - box0
+    - box1
+    - box2
+
+# List of where the objects are in the world, on the form: 'waypoint': [object names]
+at:
+  depo: *boxes
+  drone_start0:
+    - drone0
+  drone_start1:
+    - drone1
+  bot_start:
+    - turtle
+  wp_person0:
+    - person0
+  wp_person1:
+    - person1
+
+
+  # List of waypoint positions, on the form: 'waypoint': [x, y]
+waypoints:
+  depo:
+    x: -2.2
+    y: -4.7
+  drone_start0:
+    x: -1.4
+    y: -4.8
+  drone_start1:
+    x: -1.8
+    y: -4.8
+  bot_start:
+    x: -1.7
+    y: -4
+  wp_person0:
+    x: -1.4
+    y: -2.2
+  wp_person1:
+    x: 0.5
+    y: -0.1
+  
