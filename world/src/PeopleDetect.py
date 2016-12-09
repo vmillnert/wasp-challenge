@@ -6,6 +6,7 @@ from apriltags_ros.msg import AprilTagDetectionArray
 from geometry_msgs.msg import PoseArray
 from geometry_msgs.msg import Pose
 from coordinator.srv import AddObject
+import numpy
 
 global pub,tags
 
@@ -20,7 +21,7 @@ def add_person(detection):
   global tag_pos,req_observations,add_object_service,map_frame
   # Init tracking
   if not detection.id in tag_pos:
-    tag_pos[detection.id] = [0, 0]
+    tag_pos[detection.id] = [numpy.zeros(2), 0]
 
   #Get position in map frame
   listener.waitForTransform(map_frame, detection.pose.header.frame_id,
@@ -29,14 +30,15 @@ def add_person(detection):
   pstamped = listener.transformPose(map_frame, detection.pose)
 
   #Add observation
-  tag_pos[detection.id][0] += pstamped.pose.position/req_observations
+  pos = numpy.array([pstamped.pose.position.x, pstamped.pose.position.y])
+  tag_pos[detection.id][0] += pos/req_observations
   tag_pos[detection.id][1] += 1
 
   #Check if we have enough observations
   if tag_pos[detection.id][1] == req_observations:
     # Send to world state node
     pos = tag_pos[detection.id][0]
-    add_object_service(name = "person_tag{}".format(detection.id), type = "person", x = pos.x, y = pos.y)
+    add_object_service(name = "person_tag{}".format(detection.id), type = "person", x = pos[0], y = pos[1])
     # Remove from tracking
     tags.remove(detection.id)
 
