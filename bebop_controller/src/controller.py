@@ -830,8 +830,8 @@ class BebopController(Controller):
                                   
                 # Automatic mode
                 self.goal_reached = (numpy.sqrt((xref-x)**2 + (yref-y)**2) < self._TOLERANCE) \
-                    and (numpy.abs(zref-z) <  self._HEIGHT_TOL) \
-                    and (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) < self._YAW_TOL)
+                    and (numpy.abs(zref-z) <  self._HEIGHT_TOL)# \
+                    #and (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) < self._YAW_TOL)
 
                 # Check if we are withing our tolerance:
                 # if (numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE) \
