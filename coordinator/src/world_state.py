@@ -195,6 +195,16 @@ class WorldState:
                 kitem.values = [KeyValue('object', value), KeyValue('waypoint', key)]
                 kitem.attribute_name = 'at'
                 self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
+        
+        # Add state airborne to drones at air waypoints
+        for air_wp in self.objects['airwaypoint']:
+            for drone in self.objects['drone']:
+                if drone in self.at[air_wp]:
+                    kitem = KnowledgeItem()
+                    kitem.knowledge_type = KnowledgeItem.FACT
+                    kitem.values = [KeyValue('drone', drone)]
+                    kitem.attribute_name = 'airborne'
+                    self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Set relation between air and ground waypoints
         for air, ground in zip(self.objects['airwaypoint'], self.objects['waypoint']):
