@@ -288,12 +288,12 @@ class WorldState:
         if request.name in self.obj2loc:
             return AddObjectResponse()
 
-        wp_name = request.name if request.type == "waypoint" else "%s_wp" % request.name
+        wp_name = request.name if request.type == "waypoint" else "wp_%s" % request.name
 
         self.objects['waypoint'].append(wp_name)
         self.waypoint_positions[wp_name] = {'x': request.x, 'y': request.y}
         self.at[wp_name] = []
-        air_wp = "a_%s" % request.name
+        air_wp = "a_%s" % wp_name
         self.objects['airwaypoint'].append(air_wp)
         self.waypoint_positions[air_wp] = {'x': request.x, 'y': request.y}
         self.at[air_wp] = []
@@ -304,6 +304,7 @@ class WorldState:
 
         self._generate_obj2loc()
         self.visualize_state()
+        #self.print_state()
 
         return AddObjectResponse()
 
