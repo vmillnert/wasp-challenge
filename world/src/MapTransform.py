@@ -29,6 +29,7 @@ import rospy
 import tf
 import math
 import numpy
+from copy import copy
 from threading import Thread,Event,Lock
 from world.msg import TagRef
 
@@ -108,8 +109,13 @@ def locatedCallback(tagref):
       rot_norm = sorted(rot_norm, key=lambda x: x[0])
       i = int(len(trans_norm)/2)
     
-      transforms[key] = (tagref.global_frame, tagref.target_frame, trans_norm[i][1], rot_norm[i][1], tagref.pose.header.stamp)
+      new_transform = (tagref.global_frame, tagref.target_frame, trans_norm[i][1], rot_norm[i][1], tagref.pose.header.stamp)
+      if not key in transforms:
+        transforms[key] = lp_filter_transform(None, new_transform)
+      else:
+        transforms[key] = lp_filter_transform(transforms[key], new_transform)
       # CHANGE tagref.pose.header.stamp -> rospy.Time.now() ???
+
     lock.release()
 
   except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
@@ -135,6 +141,34 @@ def broadcastThread():
     lock.release()
     rate.sleep()
 
+def lp_filter_transform(prev_output, new_measurement):
+	# First measurement, initate filter
+	if prev_output == None:
+		return new_measurement
+	trans_diff = new_measurement[2] - prev_output[2]
+	new_trans = prev_output[2] + trans_diff*lp_update_factor
+	new_rot = tf.transformations.quaternion_slerp(prev_output[3], new_measurement[3], lp_update_factor)
+	return (new_measurement[0], new_measurement[1], new_trans, new_rot, new_measurement[4])
+
+def test_filter():
+	from geometry_msgs.msg import PoseStamped
+	N = 2*n_samples
+	for i in range(N):
+		tagref = TagRef(global_frame = "map", tag_frame = "drone", target_frame = "drone")
+		tagref.pose = PoseStamped()
+		tagref.pose.header.frame_id = "drone"
+		pos = 0.0 if i < n_samples else 20.0
+		angle = 0.0 if i < n_samples else numpy.pi/4.0
+		tagref.pose.pose.position.x = pos
+		tagref.pose.pose.position.y = pos
+		tagref.pose.pose.position.z = pos
+		q = tf.transformations.quaternion_from_euler(angle, angle, angle)
+		tagref.pose.pose.orientation.x = q[0]
+		tagref.pose.pose.orientation.y = q[1]
+		tagref.pose.pose.orientation.z = q[2]
+		tagref.pose.pose.orientation.w = q[3]
+		locatedCallback(tagref)
+
 # Create the tag reference listener
 def startMapTransform():
   global listener       # Used by locatedCallback
@@ -143,12 +177,14 @@ def startMapTransform():
   global lock           # Synchronize locatedCallback and broadcast thread
   global observation_history # A dictionary of last observation for every landmark to publish
   global n_samples # Number of samples for median filter
+  global lp_update_factor
   lock = Lock()
   n_samples = 31
   transforms = {}
   broadcaster = tf.TransformBroadcaster()
   observation_history = {}
   rospy.init_node('tagref', anonymous=False)
+  lp_update_factor = rospy.get_param('~lp_update_factor', 0.05) # Note: init_node must happen first
   listener = tf.TransformListener()           # Note: init_node must happen first
   Thread(target=broadcastThread).start()
   rospy.Subscriber('tagref', TagRef, locatedCallback)
