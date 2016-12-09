@@ -221,16 +221,33 @@ class ARDroneSimController(Controller):
     self.pub_land = rospy.Publisher('ardrone/land', Empty, queue_size=10)
     self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10) # TODO!!! Namespace
 
+    self.odom = False
     self.worldpose = Pose() # In the gazebo world
     self.pose = Pose()      # On the map
     self.target = Pose()
     self.velo = [0.0, 0.0, 0.0] # TODO: Listen to Navdata
     self.navdata = False
     self.enableStatePrint = False
+    self.setpoint_height += 0.5 * int(name[-1])
+    self.tfbroadcaster = tf.TransformBroadcaster()
 
   # Transforms world position to map
   def update_pose(self):
     try:
+      if not self.odom:
+        self.odom = deepcopy(self.worldpose)
+      p = subtract_pose(self.worldpose, self.odom)
+      ts = rospy.get_rostime()
+      self.tfbroadcaster.sendTransform(
+        (p.position.x, 
+        p.position.y, 
+        p.position.z),
+        (self.worldpose.orientation.x,
+        self.worldpose.orientation.y,
+        self.worldpose.orientation.z,
+        self.worldpose.orientation.w),
+        ts, self._name+"/base_link", self._name+"/odom")
+
       (trans, orient) = self.tfListener.lookupTransform("map", "world", rospy.Time(0))
       (t, o) = transform_pose(self.worldpose, trans, orient)
       self.pose.position.x = t[0]
@@ -240,8 +257,8 @@ class ARDroneSimController(Controller):
       self.pose.orientation.y = o[1]
       self.pose.orientation.z = o[2]
       self.pose.orientation.w = o[3]
-    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-      print("EXCEPTION")
+    except Exception as e:
+      print(e)
 
   def cb_navdata(self, data):
     self.lock.acquire();

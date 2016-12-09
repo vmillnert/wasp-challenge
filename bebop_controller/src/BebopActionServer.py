@@ -141,17 +141,17 @@ class BebopActionServer(object):
 
     def mark_load_event(self, actionserver):
         rospy.loginfo("Load action: Set yaw")
-        #self.controller.set_yaw(0)
+        self.controller.set_yaw(0)
         status, preempted = self.handle_feedback(actionserver, send_result = False)
         rospy.loginfo("Load action: Rotate down")
-        #self.controller.set_yaw(3)
+        self.controller.set_yaw(3)
         self.controller.set_height(0.8)
         status, preempted = self.handle_feedback(actionserver, send_result = False)
 
         if status == ActionStatus.COMPLETED:
             rospy.loginfo("Load action: Rotate up")
             self.controller.set_height(self.controller.setpoint_height)
-            #self.controller.set_yaw(0)
+            self.controller.set_yaw(0)
             self.handle_feedback(actionserver, send_result = True)
         else:
             self.send_result(actionserver, status, preempted)
