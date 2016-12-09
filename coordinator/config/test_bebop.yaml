@@ -10,6 +10,8 @@ objects:
     - wp3
   drone:
     - /bebop
+  turtlebot:
+    - bot0
   person:
     - person0
     - person1
@@ -33,17 +35,17 @@ waypoints:
     x: 0
     y: 0
   wp00:
-    x: 1
-    y: 1
+    x: -2 
+    y: -4 
   wp01:
-    x: 2
-    y: 1
+    x: 0 
+    y: 0 
   wp10:
     x: -1
     y: -1
   wp11:
-    x: 0
-    y: -1
+    x: 0.4
+    y: -3.4
   wp2:
     x: 3
     y: -2

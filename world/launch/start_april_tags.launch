@@ -1,6 +1,3 @@
-<!---
-  Don't forget to calibrate your camera!
--->
 <launch>
   <arg name="tagimage" default="bebop/image_raw" />
   <arg name="tagcaminfo" default="bebop/camera_info" />

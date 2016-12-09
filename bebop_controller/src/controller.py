@@ -65,6 +65,7 @@ class Controller:
     self._control_mode = 'manual' # start in 'manual'-mode
 
     self.tfListener = tf.TransformListener()
+    self.setpoint_height = 1.5
 
   def getName(self):
     return self._name
@@ -220,17 +221,33 @@ class ARDroneSimController(Controller):
     self.pub_land = rospy.Publisher('ardrone/land', Empty, queue_size=10)
     self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10) # TODO!!! Namespace
 
+    self.odom = False
     self.worldpose = Pose() # In the gazebo world
     self.pose = Pose()      # On the map
     self.target = Pose()
     self.velo = [0.0, 0.0, 0.0] # TODO: Listen to Navdata
     self.navdata = False
-    self.setpoint_height = 1.5 + 0.5 * int(name[-1])
     self.enableStatePrint = False
+    self.setpoint_height += 0.5 * int(name[-1])
+    self.tfbroadcaster = tf.TransformBroadcaster()
 
   # Transforms world position to map
   def update_pose(self):
     try:
+      if not self.odom:
+        self.odom = deepcopy(self.worldpose)
+      p = subtract_pose(self.worldpose, self.odom)
+      ts = rospy.get_rostime()
+      self.tfbroadcaster.sendTransform(
+        (p.position.x, 
+        p.position.y, 
+        p.position.z),
+        (self.worldpose.orientation.x,
+        self.worldpose.orientation.y,
+        self.worldpose.orientation.z,
+        self.worldpose.orientation.w),
+        ts, self._name+"/base_link", self._name+"/odom")
+
       (trans, orient) = self.tfListener.lookupTransform("map", "world", rospy.Time(0))
       (t, o) = transform_pose(self.worldpose, trans, orient)
       self.pose.position.x = t[0]
@@ -240,8 +257,8 @@ class ARDroneSimController(Controller):
       self.pose.orientation.y = o[1]
       self.pose.orientation.z = o[2]
       self.pose.orientation.w = o[3]
-    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-      print("EXCEPTION")
+    except Exception as e:
+      print(e)
 
   def cb_navdata(self, data):
     self.lock.acquire();
@@ -458,7 +475,7 @@ class ARDroneSimController(Controller):
 
 class BebopController(Controller):
 
-    _MAX_VEL = 0.2 # Maximum velocity for the drone in any one
+    _MAX_VEL = 0.4 # Maximum velocity for the drone in any one
                    # direction
 
     _TOLERANCE = 0.3 # Tolerance for the Go-to-goal controller
@@ -760,15 +777,15 @@ class BebopController(Controller):
                                                                      self._my_pose.pose.orientation.z,
                                                                      self._my_pose.pose.orientation.w])[2])
             action_status = self.get_action_status()
-            rospy.loginfo('%s: START OF CONTROL LOOP\n action_status: %d \n', self._name, action_status)
-            rospy.loginfo('%s: \n goal\n x: %.2f\n y: %.2f\n z: %.2f\n my pos\n  x: %.2f\n y: %.2f\n z: %.2f\n ',
-                          self._name,
-                          xref,
-                          yref,
-                          zref,
-                          x,
-                          y,
-                          z)
+#            rospy.loginfo('%s: START OF CONTROL LOOP\n action_status: %d \n', self._name, action_status)
+#            rospy.loginfo('%s: \n goal\n x: %.2f\n y: %.2f\n z: %.2f\n my pos\n  x: %.2f\n y: %.2f\n z: %.2f\n ',
+#                          self._name,
+#                          xref,
+#                          yref,
+#                          zref,
+#                          x,
+#                          y,
+#                          z)
 
             if self._control_mode == 'manual':
                 # Manual mode

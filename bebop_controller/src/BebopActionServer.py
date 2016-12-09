@@ -80,6 +80,8 @@ class BebopActionServer(object):
 
     # Loop if manual mode is set waiting for automatic to be reissued
     def wait_manual_mode(self, action, goal):
+      if self.controller.isManualMode():
+        print("Manual mode active, wait to apply action {}".format(action))
       while self.controller.isManualMode() and not rospy.is_shutdown():
           self.loop_rate.sleep()
 
@@ -138,13 +140,16 @@ class BebopActionServer(object):
         self.handle_feedback(self.as_move)
 
     def mark_load_event(self, actionserver):
+        rospy.loginfo("Load action: Set yaw")
         self.controller.set_yaw(0)
         status, preempted = self.handle_feedback(actionserver, send_result = False)
+        rospy.loginfo("Load action: Rotate down")
         self.controller.set_yaw(3)
         self.controller.set_height(0.8)
         status, preempted = self.handle_feedback(actionserver, send_result = False)
 
         if status == ActionStatus.COMPLETED:
+            rospy.loginfo("Load action: Rotate up")
             self.controller.set_height(self.controller.setpoint_height)
             self.controller.set_yaw(0)
             self.handle_feedback(actionserver, send_result = True)

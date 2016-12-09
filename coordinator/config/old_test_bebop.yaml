@@ -1,6 +1,6 @@
 # List of objects in the world, on the form: 'type': [object names]
-objects:
-  waypoint:
+objects: 
+  waypoint: 
     - depo
     - wp00
     - wp01
@@ -9,11 +9,9 @@ objects:
     - wp2
     - wp3
   drone:
-    - drone0
-    - drone1
+    - /bebop
   turtlebot:
     - bot0
-    - bot1
   person:
     - person0
     - person1
@@ -27,18 +25,13 @@ at:
   depo: *boxes
   wp00:
     - person0
-    - bot0
   wp01:
     - person1
-  wp2:
-    - drone0
-  wp3:
-    - drone1
 
 
   # List of waypoint positions, on the form: 'waypoint': [x, y]
 waypoints:
-  depo:
+  depo: 
     x: 0
     y: 0
   wp00:
@@ -51,11 +44,8 @@ waypoints:
     x: -1
     y: -1
   wp11:
-    x: 0
-    y: -1
-  wp12: 
-    x: -0.5
-    y: -1
+    x: -0.4
+    y: -3.4
   wp2:
     x: 3
     y: -2
