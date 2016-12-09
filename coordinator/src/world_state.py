@@ -98,6 +98,8 @@ class WorldState:
         self.objects = deepcopy(yaml_world['objects'])
         self.at = deepcopy(yaml_world['at'])
         self.waypoint_positions = deepcopy(yaml_world['waypoints'])
+        if "rescued" in yaml_world:
+            self.rescued = deepcopy(yaml_world['rescued'])
 
         # Add corresponding air waypoints
         self.objects['airwaypoint'] = []
@@ -200,6 +202,14 @@ class WorldState:
             kitem.knowledge_type = KnowledgeItem.FACT
             kitem.values = [KeyValue('airwaypoint', air), KeyValue('waypoint', ground)]
             kitem.attribute_name = 'over'
+            self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
+
+        # Set rescued persons
+        for person in self.rescued:
+            kitem = KnowledgeItem()
+            kitem.knowledge_type = KnowledgeItem.FACT
+            kitem.values = [KeyValue('person', person)]
+            kitem.attribute_name = 'handled'
             self.update_knowledge(update_type=KnowledgeUpdateServiceEnum.ADD_KNOWLEDGE, knowledge=kitem)
 
         # Set goals, each person should be handled
