@@ -2,12 +2,14 @@
 objects:
   waypoint:
     - depo
-    - drone_start
+    - drone_start0
+    - drone_start1
     - bot_start
     - wp_person0
     - wp_person1
   drone:
-    - bebop
+    - drone0
+    - drone1
   turtlebot:
     - bot0
   person:
@@ -21,8 +23,10 @@ objects:
 # List of where the objects are in the world, on the form: 'waypoint': [object names]
 at:
   depo: *boxes
-  drone_start:
-    - bebop
+  drone_start0:
+    - drone0
+  drone_start1:
+    - drone1
   bot_start:
     - bot0
   wp_person0:
@@ -36,8 +40,11 @@ waypoints:
   depo:
     x: -2.2
     y: -4.7
-  drone_start:
+  drone_start0:
     x: -1.4
+    y: -4.8
+  drone_start1:
+    x: -1.8
     y: -4.8
   bot_start:
     x: -1.7
