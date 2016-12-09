@@ -1,0 +1,9 @@
+<launch>
+
+  <node name="bebop_action_server" pkg="bebop_controller" type="BebopActionServer.py" output="screen" ns="/bebop">
+  </node>
+
+  <node name="bebop_teleop" pkg="bebop_controller" type="teleop.py" output="screen" ns="/bebop">
+  </node>
+
+</launch>
