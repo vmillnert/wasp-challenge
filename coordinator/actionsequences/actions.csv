@@ -1,2 +1,10 @@
 takeoff, /bebop
-load, /bebop
+wait
+goto, bot0 , wp_person0 
+goto, /bebop, wp_person0 
+wait
+goto, bot0 , depo 
+goto, /bebop, depo 
+wait
+goto, bot0 , wp_person1 
+goto, /bebop, wp_person1 

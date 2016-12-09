@@ -11,7 +11,7 @@ sleep ${DELAY};
 
 
 echo Start drone detector
-roslaunch wasp_g1_start start_drone_tag_detector.launch >logs/start_drone_tag_detector.log 2>&1 &
+roslaunch wasp_g1_start start_drone_tag_locator.launch >logs/start_drone_tag_detector.log 2>&1 &
 PIDS+=($!);
 sleep ${DELAY};
 

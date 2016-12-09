@@ -62,7 +62,7 @@
                   (over all (airborne ?drone)))
   :effect (and (at start (not (at ?box ?ground)))
                (at end (carrying ?drone ?box))
-               (at end (not (empty ?drone))))
+               (at start (not (empty ?drone))))
   )
 
 (:durative-action hand-over-drone2bot

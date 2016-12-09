@@ -7,7 +7,7 @@ objects:
     - wp_person0
     - wp_person1
   drone:
-    - /bebop
+    - bebop
   turtlebot:
     - bot0
   person:
@@ -22,7 +22,7 @@ objects:
 at:
   depo: *boxes
   drone_start:
-    - /bebop
+    - bebop
   bot_start:
     - bot0
   wp_person0:
