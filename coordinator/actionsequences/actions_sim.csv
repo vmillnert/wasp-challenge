@@ -1,6 +1,6 @@
 takeoff, drone0
-goto, drone1, wp3
+goto, drone1, drone_start
 land, drone1
-goto, drone1, wp10
+goto, drone1, depot
 land, drone1
 land, drone0

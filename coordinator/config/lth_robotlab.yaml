@@ -34,6 +34,8 @@ at:
   wp_person1:
     - person1
 
+rescued:
+  - person0
 
   # List of waypoint positions, on the form: 'waypoint': [x, y]
 waypoints:

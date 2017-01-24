@@ -15,7 +15,7 @@
       <remap from="joint_states" to="different_joint_states" />-->
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="map_to_drone0" args="0.5 0.5 0 0 0 0 map drone0/odom 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="map_to_drone0" args="-1.4 -4.8 0 0 0 0 map drone0/odom 100"/>
  </group>
 
   <group ns="drone1">
@@ -32,7 +32,7 @@
       <remap from="joint_states" to="different_joint_states" />-->
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="map_to_drone1" args="1.5 1.5 0 0 0 0 map drone1/odom 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="map_to_drone1" args="-1.8 -4.8 0 0 0 0 map drone1/odom 100"/>
   </group>
 
 </launch>
