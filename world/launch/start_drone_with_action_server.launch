@@ -1,0 +1,4 @@
+<launch>
+  <include file="$(find world)/launch/start_drone_tag_locator.launch"/>
+  <include file="$(find coordinator)/launch/no_rosplan_test_bebop.launch"/>
+</launch>

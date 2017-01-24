@@ -475,8 +475,10 @@ class ARDroneSimController(Controller):
 
 class BebopController(Controller):
 
-    _MAX_VEL = 0.4 # Maximum velocity for the drone in any one
-                   # direction
+    _MAX_VEL = 0.05 # Maximum velocity for the drone in any one
+                   # x and y 
+    _MAX_VEL_Z = 0.4 # Maximum velocity for the drone in any one
+                   # x and y 
 
     _TOLERANCE = 0.3 # Tolerance for the Go-to-goal controller
     _HEIGHT_TOL = 0.3 # tolerance for the height-controller
@@ -640,6 +642,13 @@ class BebopController(Controller):
 
         return v
 
+    def limitZ(self, v):
+        if v < -self._MAX_VEL_Z:
+            v = -self._MAX_VEL_Z
+        elif v > self._MAX_VEL_Z:
+            v = self._MAX_VEL_Z
+
+        return v
     # Reads velocity commands sent from the teleoperation-keyboard
     def teleop_velocity_callback(self, msg):
         # rospy.loginfo('%s: Teleop velocity: %s', self._name, msg)
@@ -821,8 +830,8 @@ class BebopController(Controller):
                                   
                 # Automatic mode
                 self.goal_reached = (numpy.sqrt((xref-x)**2 + (yref-y)**2) < self._TOLERANCE) \
-                    and (numpy.abs(zref-z) <  self._HEIGHT_TOL) \
-                    and (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) < self._YAW_TOL)
+                    and (numpy.abs(zref-z) <  self._HEIGHT_TOL)# \
+                    #and (numpy.abs(numpy.arctan2(numpy.sin(yawref-yaw),numpy.cos(yawref-yaw))) < self._YAW_TOL)
 
                 # Check if we are withing our tolerance:
                 # if (numpy.sqrt((xref-x)**2 + (yref-y)**2) > self._TOLERANCE) \
@@ -847,12 +856,13 @@ class BebopController(Controller):
                     # limit the control-signals ('odom'-frame)
                     ux = self.limit(vx)
                     uy = self.limit(vy)
-                    uz = self.limit(vz)
+                    uz = self.limitZ(vz)
                     uyaw = self.limit(vyaw)
                     uyaw = 0.0 # just to not have any jaw-control
                     # convert the control signal from 'odom'-frame to
                     # 'base_link'-frame
                     cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.linear.z, cmd_vel.angular.z = self.convert_control_signal(ux,uy,uz,uyaw)
+
 
                     cmd_vel.angular.z = 0.0 # just to not have any jaw controller
                     ######################################
